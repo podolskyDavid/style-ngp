@@ -28,9 +28,10 @@ from nerfstudio.pipelines.dynamic_batch import DynamicBatchPipelineConfig
 from style_ngp.style_ngp_model import StyleNGPModelConfig
 from nerfstudio.data.datamanagers.base_datamanager import VanillaDataManagerConfig
 
-# TODO: leave Trainer as is
+from style_ngp.style_ngp_pipeline import StyleNGPPipelineConfig
+
 # TODO: since pipeline abstracts model and datamanager to the trainer -> main changes need to happen there,
-#  just switch the model architecture from a certain step size and take care of the freezing and unfreezing
+#  just switch the model architecture from a certain step size
 # TODO: pipeline also probably needs to provide 2 different data managers for the 2 training stages
 # TODO: figure out where command line args (e.g., --data) are being parsed and used; need to extend to two
 #  data sets for the 2 training stages
@@ -41,7 +42,7 @@ style_ngp = MethodSpecification(
         steps_per_save=2000,
         max_num_iterations=30000,
         mixed_precision=True,
-        pipeline=DynamicBatchPipelineConfig(
+        pipeline=StyleNGPPipelineConfig(
             datamanager=VanillaDataManagerConfig(
                 dataparser=NerfstudioDataParserConfig(),
                 train_num_rays_per_batch=4096,
