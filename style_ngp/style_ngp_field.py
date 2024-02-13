@@ -128,6 +128,16 @@ class StyleNGPField(Field):
             implementation=implementation,
         )
 
+        # self.test_mlp_head = MLP(
+        #     in_dim=self.direction_encoding.get_out_dim() + self.geo_feat_dim,
+        #     num_layers=num_layers_color,
+        #     layer_width=hidden_dim_color,
+        #     out_dim=3,
+        #     activation=nn.ReLU(),
+        #     out_activation=nn.Sigmoid(),
+        #     implementation=implementation,
+        # )
+
         self.hyper_mlp_head = MLP(
             in_dim=self.direction_encoding.get_out_dim() + self.geo_feat_dim,
             num_layers=num_layers_color,
@@ -163,11 +173,21 @@ class StyleNGPField(Field):
         hypernet_hidden_sizes = [16, 32, 64, 64]
 
         # Create hypernet for the first layer
-        hypernet = hl.HyperNet(
-            input_shapes=input_shapes,
-            output_shapes={'tcnn_encoding.params': (input_layer_params,)},
-            hidden_sizes=hypernet_hidden_sizes,
-        ).to("cuda:0")
+        # hypernet = hl.HyperNet(
+        #     input_shapes=input_shapes,
+        #     output_shapes={'tcnn_encoding.params': (input_layer_params,)},
+        #     hidden_sizes=hypernet_hidden_sizes,
+        # ).to("cuda:0")
+
+        hypernet = MLP(
+            in_dim=input_shapes['h'][0],
+            num_layers=num_layers_color,
+            layer_width=hidden_dim_color,
+            out_dim=input_layer_params,
+            activation=nn.ReLU(),
+            out_activation=None,
+            implementation=implementation,
+        )
         self.hypernets.append(hypernet)
 
         # Iterate through hidden layers of target net; num_layers_color - 1 because it counts the output layer as well
@@ -186,11 +206,21 @@ class StyleNGPField(Field):
                 input_shapes = {'h': (features_dim + hidden_layer_params,)}
             print(f"input shapes: {input_shapes}")
 
-            hypernet = hl.HyperNet(
-                input_shapes=input_shapes,
-                output_shapes={'tcnn_encoding.params': (hidden_layer_params,)},
-                hidden_sizes=hypernet_hidden_sizes,
-            ).to("cuda:0")
+            # hypernet = hl.HyperNet(
+            #     input_shapes=input_shapes,
+            #     output_shapes={'tcnn_encoding.params': (hidden_layer_params,)},
+            #     hidden_sizes=hypernet_hidden_sizes,
+            # ).to("cuda:0")
+
+            hypernet = MLP(
+                in_dim=input_shapes['h'][0],
+                num_layers=num_layers_color,
+                layer_width=hidden_dim_color,
+                out_dim=hidden_layer_params,
+                activation=nn.ReLU(),
+                out_activation=None,
+                implementation=implementation,
+            )
             self.hypernets.append(hypernet)
 
         # Add variable that indicates whether the hypernetwork is active
@@ -220,12 +250,17 @@ class StyleNGPField(Field):
     def activate_hypernetwork(self):
         self.hypernetwork_active = True
 
-        # # Freeze the weights of the mlp_base, density network remains untouched
+        # Freeze the positional encoding
+        for param in self.position_encoding.parameters():
+            param.requires_grad = False
+
+        # Freeze the weights of the mlp_base, density network remains untouched
         for param in self.mlp_base.parameters():
             param.requires_grad = False
 
-        # # Freeze the positional encoding
-        # for param in self.position_encoding.parameters():
+        # TODO: freezing this, for some reason, causes crash
+        # # Freeze the direction encoding
+        # for param in self.direction_encoding.parameters():
         #     param.requires_grad = False
 
         return
@@ -285,19 +320,19 @@ class StyleNGPField(Field):
         pred_params_list = []
         for i in range(len(self.hypernets)):
             if i == 0:
-                pred_params = self.hypernets[i](h=features)["tcnn_encoding.params"]
+                pred_params = self.hypernets[i](features)
             else:
                 # Normalize the previous predicted parameters to be between 0 and 1
                 normalized_prev_pred_params = (pred_params_list[i - 1] - pred_params_list[i - 1].min()) / (
                     pred_params_list[i - 1].max() - pred_params_list[i - 1].min()
                 )
                 pred_params = self.hypernets[i](
-                    h=torch.cat([features, normalized_prev_pred_params.unsqueeze(0)], dim=-1)
-                )["tcnn_encoding.params"]
+                    torch.cat([features, normalized_prev_pred_params], dim=-1)
+                )
             pred_params_list.append(pred_params)
 
         pred_params_tensor = torch.cat(pred_params_list, dim=-1)
-        new_params = {"tcnn_encoding.params": pred_params_tensor}
+        new_params = {"tcnn_encoding.params": pred_params_tensor.view(-1,)}
 
         return new_params
 

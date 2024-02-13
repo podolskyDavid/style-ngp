@@ -42,11 +42,11 @@ class StyleNGPPipeline(DynamicBatchPipeline):
         super().__init__(config, device, test_mode, world_size, local_rank, grad_scaler)
 
     def get_train_loss_dict(self, step: int):
-        # TODO: dirty hack, change that later
-        #  just for now to have hardcoded switch between training stages
-        if step == 200:
-            self.model.field.activate_hypernetwork()
-            # TODO: switch/modify the data loader
+        # # TODO: dirty hack, change that later
+        # #  just for now to have hardcoded switch between training stages
+        # if step == 500:
+        #     self.model.field.activate_hypernetwork()
+        #     # TODO: switch/modify the data loader
 
         model_outputs, loss_dict, metrics_dict = super().get_train_loss_dict(step)
         return model_outputs, loss_dict, metrics_dict
