@@ -128,15 +128,15 @@ class StyleNGPField(Field):
             implementation=implementation,
         )
 
-        # self.test_mlp_head = MLP(
-        #     in_dim=self.direction_encoding.get_out_dim() + self.geo_feat_dim,
-        #     num_layers=num_layers_color,
-        #     layer_width=hidden_dim_color,
-        #     out_dim=3,
-        #     activation=nn.ReLU(),
-        #     out_activation=nn.Sigmoid(),
-        #     implementation=implementation,
-        # )
+        self.test_mlp_head = MLP(
+            in_dim=self.direction_encoding.get_out_dim() + self.geo_feat_dim,
+            num_layers=num_layers_color,
+            layer_width=hidden_dim_color,
+            out_dim=3,
+            activation=nn.ReLU(),
+            out_activation=nn.Sigmoid(),
+            implementation=implementation,
+        )
 
         self.hyper_mlp_head = MLP(
             in_dim=self.direction_encoding.get_out_dim() + self.geo_feat_dim,
@@ -258,12 +258,16 @@ class StyleNGPField(Field):
         for param in self.mlp_base.parameters():
             param.requires_grad = False
 
-        # TODO: freezing this, for some reason, causes crash
-        # # Freeze the direction encoding
-        # for param in self.direction_encoding.parameters():
-        #     param.requires_grad = False
+        # TODO: freezing this, for some reason, causes crash when using hypernets
+        # Freeze the direction encoding
+        for param in self.direction_encoding.parameters():
+            param.requires_grad = False
 
         return
+
+    def reset_rgb(self):
+        self.start_mlp_head.load_state_dict(self.test_mlp_head.state_dict())
+        print("resetting start_mlp_head to untrained test_mlp_head")
 
     def deactivate_hypernetwork(self):
         # TODO: Implement
@@ -364,13 +368,15 @@ class StyleNGPField(Field):
 
         # Let hypernet update the mlp_head weights if in that training stage
         if self.hypernetwork_active:
-            new_params = self.update_mlp_head()
+            # new_params = self.update_mlp_head()
 
-            # and then use the main network
-            with self.hyper_mlp_head.using_externals(new_params):
-                # Within this with block, the weights are accessible
-                rgb = self.hyper_mlp_head(h).view(*outputs_shape, -1).to(directions)
+            # # and then use the main network
+            # with self.hyper_mlp_head.using_externals(new_params):
+            #     # Within this with block, the weights are accessible
+            #     rgb = self.hyper_mlp_head(h).view(*outputs_shape, -1).to(directions)
 
+            # TODO: not sure if I need test mlp or stick to resetted start mlp, maybe switch to hypernets at some point
+            rgb = self.start_mlp_head(h).view(*outputs_shape, -1).to(directions)
         else:
             rgb = self.start_mlp_head(h).view(*outputs_shape, -1).to(directions)
 
