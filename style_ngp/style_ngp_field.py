@@ -141,7 +141,7 @@ class StyleNGPField(Field):
         # )
 
         num_layers_hyper_mlp = 2
-        layer_width_hyper_mlp = 16
+        layer_width_hyper_mlp = 128
         self.hyper_mlp_head = MLP(
             in_dim=self.direction_encoding.get_out_dim() + 3,  # +3 for the rgb values
             num_layers=num_layers_hyper_mlp,
@@ -160,78 +160,29 @@ class StyleNGPField(Field):
 
         # Add rgb transform net that will be controlled by hypernets
         self.hyper_mlp_head = hl.hypernetize(self.hyper_mlp_head, [self.hyper_mlp_head.tcnn_encoding])
+        weights_shape = self.hyper_mlp_head.external_shapes()['tcnn_encoding.params'][0]
+        print(f"weights_shape: {weights_shape}")
 
         # TODO: hardcoded here, needs to be changed later
         features_dim = 256
         input_shapes = {'h': (features_dim,)}
 
-        # Initialize the list to store the hypernets
-        self.hypernets = []
-
-        # TODO: adapt the following hypernet size calculation to pytorch at some point
-
-        # input dim needs to be a multiple of 16 in tcnn model
-        input_dim_16 = math.ceil((self.direction_encoding.get_out_dim() + 3) / 16) * 16
-        input_layer_params = input_dim_16 * hidden_dim_color
-
-        hypernet_hidden_sizes = [16, 32, 64]
-
-        # Create hypernet for the first layer
-        hypernet = hl.HyperNet(
-            input_shapes=input_shapes,
-            output_shapes={'tcnn_encoding.params': (input_layer_params,)},
-            hidden_sizes=hypernet_hidden_sizes,
-        ).to("cuda:0")
-
-        hypernet = MLP(
+        self.hypernet = MLP(
             in_dim=input_shapes['h'][0],
             num_layers=num_layers_color,
             layer_width=hidden_dim_color,
-            out_dim=input_layer_params,
+            out_dim=weights_shape,
             activation=nn.ReLU(),
             out_activation=None,
             implementation=implementation,
-        )
-        self.hypernets.append(hypernet)
-
-        # Iterate through hidden layers of target net; num_layers_color - 1 because it counts the output layer as well
-        for i in range(num_layers_hyper_mlp - 1):
-            if i == num_layers_hyper_mlp - 2:
-                # Layer that connects to the output layer - rgb with 3 values - but also multiple of 16 in tcnn model
-                hidden_layer_params = layer_width_hyper_mlp * 16
-            else:
-                hidden_layer_params = layer_width_hyper_mlp * layer_width_hyper_mlp
-            print(f"hidden_layer_params: {hidden_layer_params}")
-
-            # Condition hypernet also on previous hypernets output
-            if i == 0:
-                input_shapes = {'h': (features_dim + input_layer_params,)}
-            else:
-                input_shapes = {'h': (features_dim + hidden_layer_params,)}
-            print(f"input shapes: {input_shapes}")
-
-            hypernet = hl.HyperNet(
-                input_shapes=input_shapes,
-                output_shapes={'tcnn_encoding.params': (hidden_layer_params,)},
-                hidden_sizes=hypernet_hidden_sizes,
-            ).to("cuda:0")
-
-            hypernet = MLP(
-                in_dim=input_shapes['h'][0],
-                num_layers=num_layers_color,
-                layer_width=hidden_dim_color,
-                out_dim=hidden_layer_params,
-                activation=nn.ReLU(),
-                out_activation=None,
-                implementation=implementation,
-            )
-            self.hypernets.append(hypernet)
+        ).to("cuda:0")
 
         # Add variable that indicates whether the hypernetwork is active
         self.hypernetwork_active = False
 
-        # Add variable that keeps track of the style img to use
+        # Add variables that keeps track of the style img to use and its features
         self.style_img_path = None
+        self.style_features = None
 
     def get_density(self, ray_samples: RaySamples) -> Tuple[Tensor, Tensor]:
         """Computes and returns the densities."""
@@ -275,7 +226,6 @@ class StyleNGPField(Field):
         for param in self.mlp_base.parameters():
             param.requires_grad = False
 
-        # TODO: freezing this, for some reason, causes crash when using hypernets
         # Freeze the direction encoding
         for param in self.direction_encoding.parameters():
             param.requires_grad = False
@@ -283,6 +233,7 @@ class StyleNGPField(Field):
         # Freeze the weights of the start_mlp_head
         for param in self.start_mlp_head.parameters():
             param.requires_grad = False
+        print("Froze everything except the rgb transform and the hypernet")
         return
 
     def reset_rgb(self):
@@ -334,45 +285,17 @@ class StyleNGPField(Field):
         return image
 
     def update_mlp_head(self):
+        new_params = {"tcnn_encoding.params": self.hypernet(self.style_features).view(-1,)}
+        return new_params
+    
+    def update_style_img(self, img_path):
+        self.style_img_path = img_path
+        print(f"new img_path is {img_path}")
+
         # Load style image
         style_img = self.load_img(self.style_img_path)
         # Extract features
-        features = self.feature_extractor(style_img)
-
-        # # Run hypernetwork
-        # new_params = self.hypernet(h=features)
-
-        # # Run hypernetworks and concatenate the tensors of key tcnn_encoding.params, returned again as a dict with that
-        # #  key
-        # new_params = {}
-        # outputs = torch.cat(
-        #     [hypernet(h=features)["tcnn_encoding.params"] for hypernet in self.hypernets], dim=-1
-        # )
-        # print(f"shape of outputs: {outputs.shape}")
-        # new_params["tcnn_encoding.params"] = outputs
-
-        pred_params_list = []
-        for i in range(len(self.hypernets)):
-            if i == 0:
-                pred_params = self.hypernets[i](features)
-            else:
-                # Normalize the previous predicted parameters to be between 0 and 1
-                normalized_prev_pred_params = (pred_params_list[i - 1] - pred_params_list[i - 1].min()) / (
-                    pred_params_list[i - 1].max() - pred_params_list[i - 1].min()
-                )
-                pred_params = self.hypernets[i](
-                    torch.cat([features, normalized_prev_pred_params], dim=-1)
-                )
-            pred_params_list.append(pred_params)
-
-        pred_params_tensor = torch.cat(pred_params_list, dim=-1)
-        new_params = {"tcnn_encoding.params": pred_params_tensor.view(-1,)}
-
-        return new_params
-    
-    def set_style_img(self, img_path):
-        self.style_img_path = img_path
-        print(f"new img_path is {img_path}")
+        self.style_features = self.feature_extractor(style_img)
         return None
 
     def get_outputs(

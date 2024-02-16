@@ -88,8 +88,8 @@ class StyleNGPPipeline(DynamicBatchPipeline):
         super().__init__(config, device, test_mode, world_size, local_rank, grad_scaler)
         self.datasets = self.config.get_datasets()
         self.i = 0
-        self.structure_train_steps = 100
-        self.rgb_train_steps = 100
+        self.structure_train_steps = 1000
+        self.rgb_train_steps = 200
 
     def get_train_loss_dict(self, step: int):
         # Activate hypernetwork after some training on initial data set
@@ -119,12 +119,14 @@ class StyleNGPPipeline(DynamicBatchPipeline):
 
             # Set the corresponding style image
             style_img_path = self.datasets[self.i]["style_img"]
-            self.model.field.set_style_img(style_img_path)
+            self.model.field.update_style_img(style_img_path)
 
-            # Keep going through all styles
+            # Keep cycling through all styles
             if self.i == len(self.datasets) - 1:
-                raise ValueError("All datasets have been trained on")
-            self.i += 1
+                print("All datasets have been trained on. Next epoch")
+                self.i = 0
+            else:
+                self.i += 1
 
         model_outputs, loss_dict, metrics_dict = super().get_train_loss_dict(step)
         return model_outputs, loss_dict, metrics_dict
