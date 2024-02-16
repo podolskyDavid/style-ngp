@@ -21,11 +21,11 @@ class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
     _target: Type = field(default_factory=lambda: StyleNGPPipeline)
     """target class to instantiate"""
 
-    data_base_folder = "/home/maximilian_fehrentz/Documents/nerf_data/craniotomy/MICCAI/mesh_videos"
+    base_data_dir = "/home/maximilian_fehrentz/Documents/nerf_data/craniotomy/MICCAI/mesh_videos"
+    style_dir = "/home/maximilian_fehrentz/Documents/nerf_data/craniotomy/MICCAI/data/styles"
 
     def get_datasets(self):
-        folder_names = [
-            "mr",
+        data_dirs = [
             "207_065_cat5_1.5",
             "207_089_cat5_1.0",
             "207_101_sum_1.0",
@@ -43,7 +43,30 @@ class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
             "207_207_sum_1.0",
             "207_209_sum_1.0"
         ]
-        return [os.path.join(self.data_base_folder, x) for x in folder_names]
+        style_names = [
+            "case065.png",
+            "case089.png",
+            "case101.png",
+            "case103.png",
+            "case105.png",
+            "case109.png",
+            "case110.png",
+            "case111.png",
+            "case112.png",
+            "case114.png",
+            "case117.png",
+            "case201.png",
+            "case202.png",
+            "case205.png",
+            "case207.png",
+            "case209.png"
+        ]
+        return [{
+            "data_folder": os.path.join(self.base_data_dir, data_dir),
+            "style_img": os.path.join(self.style_dir, style_name)
+        } for data_dir, style_name in zip(data_dirs, style_names)
+        ]
+
 
 
 class StyleNGPPipeline(DynamicBatchPipeline):
@@ -65,34 +88,38 @@ class StyleNGPPipeline(DynamicBatchPipeline):
         super().__init__(config, device, test_mode, world_size, local_rank, grad_scaler)
         self.datasets = self.config.get_datasets()
         self.i = 0
-        self.structure_train_steps = 1000
-        self.rgb_train_steps = 500
+        self.structure_train_steps = 100
+        self.rgb_train_steps = 100
 
     def get_train_loss_dict(self, step: int):
-        # TODO: dirty hack, change that later
-        #  just for now to have hardcoded switch between training stages
+        # Activate hypernetwork after some training on initial data set
         if step == self.structure_train_steps:
             self.model.field.activate_hypernetwork()
+
         if step == self.structure_train_steps or (step > self.structure_train_steps and step % self.rgb_train_steps == 0):
             # Determine a style name/identifier to save the weights
             if self.i != 0:
-                # Use name of the data folder as model identifier; dataset i - 1 because i has been increased to move on
-                style_name = self.datasets[self.i - 1].split("/")[-1]
+                # Use name of the style image as model identifier; dataset i - 1 to account for prev increase
+                style_name = os.path.splitext(self.datasets[self.i - 1]["style_img"])[0]
             else:
                 # Initial data set
                 style_name = "initial_style"
 
-            # Save model
-            self.model.field.save_checkpoint(folder=self.config.data_base_folder, style=style_name)
+            # # Save model
+            # self.model.field.save_checkpoint(folder=self.config.base_data_dir, style=style_name)
 
-            # Reset RGB net
-            self.model.field.reset_rgb()
+            # # Reset RGB net
+            # self.model.field.reset_rgb()
 
             # Move to next data set
-            self.config.datamanager.data = Path(self.datasets[self.i])
+            self.config.datamanager.data = Path(self.datasets[self.i]["data_folder"])
             self.datamanager = self.config.datamanager.setup(
                 device='cuda:0', test_mode=self.test_mode, world_size=1, local_rank=0
             )
+
+            # Set the corresponding style image
+            style_img_path = self.datasets[self.i]["style_img"]
+            self.model.field.set_style_img(style_img_path)
 
             # Keep going through all styles
             if self.i == len(self.datasets) - 1:
