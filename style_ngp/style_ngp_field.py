@@ -43,6 +43,8 @@ import hyperlight as hl
 
 import math
 
+import os
+
 class StyleNGPField(Field):
     """Compound Field
 
@@ -138,15 +140,15 @@ class StyleNGPField(Field):
             implementation=implementation,
         )
 
-        self.hyper_mlp_head = MLP(
-            in_dim=self.direction_encoding.get_out_dim() + self.geo_feat_dim,
-            num_layers=num_layers_color,
-            layer_width=hidden_dim_color,
-            out_dim=3,
-            activation=nn.ReLU(),
-            out_activation=nn.Sigmoid(),
-            implementation=implementation,
-        )
+        # self.hyper_mlp_head = MLP(
+        #     in_dim=self.direction_encoding.get_out_dim() + self.geo_feat_dim,
+        #     num_layers=num_layers_color,
+        #     layer_width=hidden_dim_color,
+        #     out_dim=3,
+        #     activation=nn.ReLU(),
+        #     out_activation=nn.Sigmoid(),
+        #     implementation=implementation,
+        # )
 
         # Add feature extractor
         self.feature_extractor = VGGFeatureExtractor()
@@ -154,8 +156,8 @@ class StyleNGPField(Field):
         for param in self.feature_extractor.parameters():
             param.requires_grad = False
 
-        # Add rgb net that will be controlled by hypernets
-        self.hyper_mlp_head = hl.hypernetize(self.hyper_mlp_head, [self.hyper_mlp_head.tcnn_encoding])
+        # # Add rgb net that will be controlled by hypernets
+        # self.hyper_mlp_head = hl.hypernetize(self.hyper_mlp_head, [self.hyper_mlp_head.tcnn_encoding])
 
         # TODO: hardcoded here, needs to be changed later
         features_dim = 256
@@ -247,6 +249,16 @@ class StyleNGPField(Field):
         density = density * selector[..., None]
         return density, base_mlp_out
 
+    def save_checkpoint(self, folder, style):
+        # Save the whole field
+        torch.save(self, os.path.join(folder, f"{style}.pth"))
+        return
+
+    def load_checkpoint(self, folder, style):
+        # Load the whole field
+        self = torch.load(os.path.join(folder, f"{style}.pth"))
+        return
+
     def activate_hypernetwork(self):
         self.hypernetwork_active = True
 
@@ -262,7 +274,6 @@ class StyleNGPField(Field):
         # Freeze the direction encoding
         for param in self.direction_encoding.parameters():
             param.requires_grad = False
-
         return
 
     def reset_rgb(self):
