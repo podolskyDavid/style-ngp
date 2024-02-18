@@ -33,10 +33,8 @@ class VGGFeatureExtractor(nn.Module):
         h = self.slice4(h)
         h = self.slice5(h)
         h_relu5_3 = h.mean(dim=1, keepdim=True).view(h.size(0), -1)  # Flatten the feature map
-        # Apply sigmoid to the feature map
-        h_sigmoid5_3 = torch.sigmoid(h_relu5_3)
-        # TODO: potentially incorporate multiple feature maps from different layers
-        return h_sigmoid5_3
+        # # TODO: potentially incorporate multiple feature maps from different layers
+        return h_relu5_3
 
 
 # class HyperMLP(nn.Module):

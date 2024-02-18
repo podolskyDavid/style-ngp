@@ -141,9 +141,10 @@ class StyleNGPField(Field):
         # )
 
         num_layers_hyper_mlp = 2
-        layer_width_hyper_mlp = 128
+        layer_width_hyper_mlp = 16
+        input_dim_hyper_mlp = 3
         self.hyper_mlp_head = MLP(
-            in_dim=self.direction_encoding.get_out_dim() + 3,  # +3 for the rgb values
+            in_dim=input_dim_hyper_mlp,
             num_layers=num_layers_hyper_mlp,
             layer_width=layer_width_hyper_mlp,
             out_dim=3,
@@ -154,6 +155,7 @@ class StyleNGPField(Field):
 
         # Add feature extractor
         self.feature_extractor = VGGFeatureExtractor()
+
         # Freeze the feature extractor, remains frozen throughout
         for param in self.feature_extractor.parameters():
             param.requires_grad = False
@@ -167,17 +169,68 @@ class StyleNGPField(Field):
         features_dim = 256
         input_shapes = {'h': (features_dim,)}
 
-        #         num_layers_color: int = 3,
-        #         hidden_dim_color: int = 16,
+        num_layers_hypernet = 2
+        layer_width_hypernet = 64
+        out_hypernet = 256
         self.hypernet = MLP(
             in_dim=input_shapes['h'][0],
-            num_layers=num_layers_color,
-            layer_width=hidden_dim_color,
-            out_dim=weights_shape,
+            num_layers=num_layers_hypernet,
+            layer_width=layer_width_hypernet,
+            out_dim=out_hypernet,
+            activation=nn.ReLU(),
+            out_activation=nn.ReLU(),
+            implementation=implementation,
+        ).to("cuda:0")
+
+        # Initialize the list to store the heads
+        self.hypernet_heads = []
+
+        # TODO: adapt the following hypernet size calculation to pytorch at some point
+        # input dim needs to be a multiple of 16 in tcnn model
+        input_dim_16 = math.ceil(input_dim_hyper_mlp / 16) * 16
+        input_layer_params = input_dim_16 * layer_width_hyper_mlp
+        print(f"input_layer_params: {input_layer_params}")
+
+        layers_head = 2
+        width_head = 32
+        head = MLP(
+            in_dim=out_hypernet,
+            num_layers=layers_head,
+            layer_width=width_head,
+            out_dim=input_layer_params,
             activation=nn.ReLU(),
             out_activation=None,
             implementation=implementation,
         ).to("cuda:0")
+
+        self.hypernet_heads.append(head)
+
+        # Iterate through hidden layers of target net; num_layers_color - 1 because it counts the output layer as well
+        for i in range(num_layers_hyper_mlp - 1):
+            if i == num_layers_hyper_mlp - 2:
+                # Layer that connects to the output layer - rgb with 3 values - but also multiple of 16 in tcnn model
+                hidden_layer_params = layer_width_hyper_mlp * 16
+            else:
+                hidden_layer_params = layer_width_hyper_mlp * layer_width_hyper_mlp
+            print(f"hidden_layer_params: {hidden_layer_params}")
+
+            # # Condition hypernet also on previous hypernets output
+            # if i == 0:
+            #     input_shapes = {'h': (features_dim + input_layer_params,)}
+            # else:
+            #     input_shapes = {'h': (features_dim + hidden_layer_params,)}
+            # print(f"input shapes: {input_shapes}")
+
+            head = MLP(
+                in_dim=out_hypernet,
+                num_layers=layers_head,
+                layer_width=width_head,
+                out_dim=hidden_layer_params,
+                activation=nn.ReLU(),
+                out_activation=None,
+                implementation=implementation,
+            )
+            self.hypernet_heads.append(head)
 
         # Add variable that indicates whether the hypernetwork is active
         self.hypernetwork_active = False
@@ -248,6 +301,9 @@ class StyleNGPField(Field):
         # Freeze the weights of the start_mlp_head
         for param in self.start_mlp_head.parameters():
             param.requires_grad = False
+
+        for param in self.hyper_mlp_head.parameters():
+            param.requires_grad = False
         return
 
     def reset_rgb(self):
@@ -299,7 +355,18 @@ class StyleNGPField(Field):
         return image
 
     def update_mlp_head(self):
-        new_params =  {"tcnn_encoding.params": self.hypernet(self.style_features).view(-1,)}
+        # Prepare list to store the head outputs
+        pred_params_list = []
+
+        # Run base self.hypernet that will be input to the heads
+        base_output = self.hypernet(self.style_features)
+
+        for i in range(len(self.hypernet_heads)):
+            pred_params = self.hypernet_heads[i](base_output)
+            pred_params_list.append(pred_params)
+
+        pred_params_tensor = torch.cat(pred_params_list, dim=-1)
+        new_params = {"tcnn_encoding.params": pred_params_tensor.view(-1,)}
         return new_params
     
     def update_style_img(self, img_path):
@@ -349,8 +416,8 @@ class StyleNGPField(Field):
             # and then use the hyper network
             with self.hyper_mlp_head.using_externals(new_params):
                 # Input hypernet
-                concat_input = torch.cat([d, rgb], dim=-1)
-                rgb = self.hyper_mlp_head(concat_input).view(*outputs_shape, -1).to(directions)
+                # concat_input = torch.cat([d, rgb], dim=-1)
+                rgb = self.hyper_mlp_head(rgb).view(*outputs_shape, -1).to(directions)
         else:
             rgb = self.start_mlp_head(h).view(*outputs_shape, -1).to(directions)
 

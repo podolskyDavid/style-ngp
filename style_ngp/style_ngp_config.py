@@ -30,11 +30,6 @@ from nerfstudio.data.datamanagers.base_datamanager import VanillaDataManagerConf
 
 from style_ngp.style_ngp_pipeline import StyleNGPPipelineConfig
 
-# TODO: since pipeline abstracts model and datamanager to the trainer -> main changes need to happen there,
-#  just switch the model architecture from a certain step size
-# TODO: pipeline also probably needs to provide 2 different data managers for the 2 training stages
-# TODO: figure out where command line args (e.g., --data) are being parsed and used; need to extend to two
-#  data sets for the 2 training stages
 style_ngp = MethodSpecification(
     config=TrainerConfig(
         method_name="style-ngp",

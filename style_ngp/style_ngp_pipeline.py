@@ -97,8 +97,8 @@ class StyleNGPPipeline(DynamicBatchPipeline):
             cb_hook=self.on_style_dropdown_change,
         )
         self.i = 0
-        self.structure_train_steps = 1000
-        self.rgb_train_steps = 100
+        self.structure_train_steps = 500
+        self.rgb_train_steps = 5
 
     def on_style_dropdown_change(self, handle: ViewerDropdown) -> None:
         # Style dropdown will only be used during inference, therefore activate hypernetwork
