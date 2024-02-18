@@ -299,7 +299,7 @@ class StyleNGPField(Field):
         return image
 
     def update_mlp_head(self):
-        new_params = self.hypernet(h=self.style_features)
+        new_params =  {"tcnn_encoding.params": self.hypernet(self.style_features).view(-1,)}
         return new_params
     
     def update_style_img(self, img_path):
