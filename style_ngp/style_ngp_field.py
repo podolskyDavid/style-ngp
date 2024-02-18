@@ -167,6 +167,8 @@ class StyleNGPField(Field):
         features_dim = 256
         input_shapes = {'h': (features_dim,)}
 
+        #         num_layers_color: int = 3,
+        #         hidden_dim_color: int = 16,
         self.hypernet = MLP(
             in_dim=input_shapes['h'][0],
             num_layers=num_layers_color,
@@ -205,15 +207,28 @@ class StyleNGPField(Field):
         density = density * selector[..., None]
         return density, base_mlp_out
 
-    def save_checkpoint(self, folder, style):
-        # Save the whole field
-        torch.save(self, os.path.join(folder, f"{style}.pth"))
-        return
-
-    def load_checkpoint(self, folder, style):
-        # Load the whole field
-        self = torch.load(os.path.join(folder, f"{style}.pth"))
-        return
+    # def save_checkpoint(self, folder, style):
+    #     # Assume model is your PyTorch model
+    #     state_dict = self.state_dict()
+    #
+    #     # List of keys to exclude
+    #     exclude_keys = []  # Adjust keys accordingly
+    #
+    #     # Create a new dict without excluded keys
+    #     filtered_state_dict = {k: v for k, v in state_dict.items() if k not in exclude_keys}
+    #
+    #     print(f"filtered_state_dict keys: {filtered_state_dict.keys()}")
+    #
+    #     torch.save(filtered_state_dict, os.path.join(folder, f"{style}.pth"))
+    #
+    #     # TODO: remove, only debugging
+    #     self.load_checkpoint(folder, style)
+    #     return
+    #
+    # def load_checkpoint(self, folder, style):
+    #     # Load the whole field
+    #     self = torch.load(os.path.join(folder, f"{style}.pth"))
+    #     return
 
     def activate_hypernetwork(self):
         self.hypernetwork_active = True
@@ -233,7 +248,6 @@ class StyleNGPField(Field):
         # Freeze the weights of the start_mlp_head
         for param in self.start_mlp_head.parameters():
             param.requires_grad = False
-        print("Froze everything except the rgb transform and the hypernet")
         return
 
     def reset_rgb(self):
@@ -285,7 +299,7 @@ class StyleNGPField(Field):
         return image
 
     def update_mlp_head(self):
-        new_params = {"tcnn_encoding.params": self.hypernet(self.style_features).view(-1,)}
+        new_params = self.hypernet(h=self.style_features)
         return new_params
     
     def update_style_img(self, img_path):
@@ -335,8 +349,8 @@ class StyleNGPField(Field):
             # and then use the hyper network
             with self.hyper_mlp_head.using_externals(new_params):
                 # Input hypernet
-                input = torch.cat([d, rgb], dim=-1)
-                rgb = self.hyper_mlp_head(input).view(*outputs_shape, -1).to(directions)
+                concat_input = torch.cat([d, rgb], dim=-1)
+                rgb = self.hyper_mlp_head(concat_input).view(*outputs_shape, -1).to(directions)
         else:
             rgb = self.start_mlp_head(h).view(*outputs_shape, -1).to(directions)
 

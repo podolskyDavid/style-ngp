@@ -33,12 +33,6 @@ class StyleNGPModel(NGPModel):
 
     config: StyleNGPModelConfig
     field: StyleNGPField
-    # TODO: overwrite populate_modules to put custom fields in the right place via self.field
-    # TODO: figure out how to switch hyper network on and off -> simple attribute?
-    # TODO: overwrite get_outputs
-    # TODO: overwrite get_metrics_dict
-    # TODO: overwrite get_loss_dict
-    # TODO: overwrite get_image_metrics_and_images
 
     def populate_modules(self):
         # Calling superclass

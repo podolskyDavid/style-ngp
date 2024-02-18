@@ -13,6 +13,8 @@ from nerfstudio.pipelines.dynamic_batch import DynamicBatchPipeline, DynamicBatc
 from pathlib import Path
 import os
 
+from nerfstudio.viewer.viewer_elements import ViewerDropdown
+
 
 @dataclass
 class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
@@ -24,47 +26,48 @@ class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
     base_data_dir = "/home/maximilian_fehrentz/Documents/nerf_data/craniotomy/MICCAI/mesh_videos"
     style_dir = "/home/maximilian_fehrentz/Documents/nerf_data/craniotomy/MICCAI/data/styles"
 
+    data_dirs = [
+        "207_065_cat5_1.5",
+        "207_089_cat5_1.0",
+        "207_101_sum_1.0",
+        # "207_103_cat5_1.0",
+        "207_105_sum_1.0",
+        "207_109_sum_0.5",
+        "207_110_sum_0.75",
+        "207_111_cat5_1.0",
+        "207_112_cat5_1.0",
+        "207_114_sum_0.75",
+        "207_117_cat5_1.0",
+        "207_201_sum_1.0",
+        "207_202_cat5_2",
+        "207_205_cat5_2",
+        # "207_207_sum_1.0",
+        "207_209_sum_1.0"
+    ]
+    style_names = [
+        "case065.png",
+        "case089.png",
+        "case101.png",
+        # "case103.png",
+        "case105.png",
+        "case109.png",
+        "case110.png",
+        "case111.png",
+        "case112.png",
+        "case114.png",
+        "case117.png",
+        "case201.png",
+        "case202.png",
+        "case205.png",
+        # "case207.png",
+        "case209.png"
+    ]
+
     def get_datasets(self):
-        data_dirs = [
-            "207_065_cat5_1.5",
-            "207_089_cat5_1.0",
-            "207_101_sum_1.0",
-            "207_103_cat5_1.0",
-            "207_105_sum_1.0",
-            "207_109_sum_0.5",
-            "207_110_sum_0.75",
-            "207_111_cat5_1.0",
-            "207_112_cat5_1.0",
-            "207_114_sum_0.75",
-            "207_117_cat5_1.0",
-            "207_201_sum_1.0",
-            "207_202_cat5_2",
-            "207_205_cat5_2",
-            "207_207_sum_1.0",
-            "207_209_sum_1.0"
-        ]
-        style_names = [
-            "case065.png",
-            "case089.png",
-            "case101.png",
-            "case103.png",
-            "case105.png",
-            "case109.png",
-            "case110.png",
-            "case111.png",
-            "case112.png",
-            "case114.png",
-            "case117.png",
-            "case201.png",
-            "case202.png",
-            "case205.png",
-            "case207.png",
-            "case209.png"
-        ]
         return [{
             "data_folder": os.path.join(self.base_data_dir, data_dir),
             "style_img": os.path.join(self.style_dir, style_name)
-        } for data_dir, style_name in zip(data_dirs, style_names)
+        } for data_dir, style_name in zip(self.data_dirs, self.style_names)
         ]
 
 
@@ -87,9 +90,21 @@ class StyleNGPPipeline(DynamicBatchPipeline):
     ):
         super().__init__(config, device, test_mode, world_size, local_rank, grad_scaler)
         self.datasets = self.config.get_datasets()
+        self.style_dropdown = ViewerDropdown(
+            name="Style",
+            default_value="case065.png",
+            options=self.config.style_names,
+            cb_hook=self.on_style_dropdown_change,
+        )
         self.i = 0
         self.structure_train_steps = 1000
-        self.rgb_train_steps = 200
+        self.rgb_train_steps = 100
+
+    def on_style_dropdown_change(self, handle: ViewerDropdown) -> None:
+        # Style dropdown will only be used during inference, therefore activate hypernetwork
+        if not self.model.field.hypernetwork_active:
+            self.model.field.activate_hypernetwork()
+        self.model.field.update_style_img(os.path.join(self.config.style_dir, handle.value))
 
     def get_train_loss_dict(self, step: int):
         # Activate hypernetwork after some training on initial data set
@@ -104,12 +119,6 @@ class StyleNGPPipeline(DynamicBatchPipeline):
             else:
                 # Initial data set
                 style_name = "initial_style"
-
-            # # Save model
-            # self.model.field.save_checkpoint(folder=self.config.base_data_dir, style=style_name)
-
-            # # Reset RGB net
-            # self.model.field.reset_rgb()
 
             # Move to next data set
             self.config.datamanager.data = Path(self.datasets[self.i]["data_folder"])
