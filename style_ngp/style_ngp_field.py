@@ -12,8 +12,6 @@ from typing import Dict, Literal, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
-# TODO: remove later, just for now to test
-from torchvision import transforms
 
 from nerfstudio.cameras.rays import RaySamples
 from nerfstudio.data.scene_box import SceneBox
@@ -32,12 +30,8 @@ from nerfstudio.field_components.mlp import MLP, MLPWithHashEncoding
 from nerfstudio.field_components.spatial_distortions import SpatialDistortion
 from nerfstudio.fields.base_field import Field, get_normalized_directions
 
-from style_ngp.field_components import VGGFeatureExtractor
-from style_ngp.util import flip_parameters_to_tensors, set_all_parameters
-
-from imageio import imread
-from PIL import Image
-import numpy as np
+from style_ngp.field_components import VGGFeatureExtractor, SimpleFeatureExtractor
+from style_ngp.util import load_img
 
 import hyperlight as hl
 
@@ -140,9 +134,9 @@ class StyleNGPField(Field):
         #     implementation=implementation,
         # )
 
-        num_layers_hyper_mlp = 2
-        layer_width_hyper_mlp = 16
-        input_dim_hyper_mlp = 3
+        num_layers_hyper_mlp = num_layers_color
+        layer_width_hyper_mlp = hidden_dim_color
+        input_dim_hyper_mlp = self.direction_encoding.get_out_dim() + self.geo_feat_dim
         self.hyper_mlp_head = MLP(
             in_dim=input_dim_hyper_mlp,
             num_layers=num_layers_hyper_mlp,
@@ -154,7 +148,7 @@ class StyleNGPField(Field):
         )
 
         # Add feature extractor
-        self.feature_extractor = VGGFeatureExtractor()
+        self.feature_extractor = SimpleFeatureExtractor()
 
         # Freeze the feature extractor, remains frozen throughout
         for param in self.feature_extractor.parameters():
@@ -192,7 +186,7 @@ class StyleNGPField(Field):
         print(f"input_layer_params: {input_layer_params}")
 
         layers_head = 2
-        width_head = 32
+        width_head = 64
         head = MLP(
             in_dim=out_hypernet,
             num_layers=layers_head,
@@ -235,9 +229,8 @@ class StyleNGPField(Field):
         # Add variable that indicates whether the hypernetwork is active
         self.hypernetwork_active = False
 
-        # Add variables that keeps track of the style img to use and its features
-        self.style_img_path = None
-        self.style_features = None
+        # Add variables that keeps track of the style img to use
+        self.style_img = None
 
     def get_density(self, ray_samples: RaySamples) -> Tuple[Tensor, Tensor]:
         """Computes and returns the densities."""
@@ -314,52 +307,18 @@ class StyleNGPField(Field):
         # TODO: Implement
         return
 
-    def load_img(self, img_path):
-        if img_path is None:
-            raise ValueError("Style image path is None.")
-
-        # Load image
-        image = imread(img_path)
-        # Remove alpha channel
-        image = image[:, :, :3]
-        # Convert the image to a PIL Image
-        image = Image.fromarray(image)
-        # Get the dimensions of the image
-        width, height = image.size
-        # Determine the size of the square and the top left coordinates of the square
-        size = min(width, height)
-        left = (width - size) / 2
-        top = (height - size) / 2
-        right = (width + size) / 2
-        bottom = (height + size) / 2
-
-        # Crop the image to a square
-        image = image.crop((left, top, right, bottom))
-        # Resize the image to 256x256
-        image = image.resize((256, 256))
-
-        # Convert the image back to a numpy array
-        image = np.array(image)
-        # Convert the image to PyTorch tensor and normalize it to [0, 1]
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            # transforms.Lambda(lambda x: x.half())
-        ])
-        image = transform(image)
-
-        # Add an extra dimension for the batch size
-        image = image.unsqueeze(0)
-        # Move image to GPU
-        image = image.to("cuda:0")
-        return image
-
     def update_mlp_head(self):
         # Prepare list to store the head outputs
         pred_params_list = []
 
+        # Extract features
+        style_features = self.feature_extractor(self.style_img)
+
+        # Normalize the features between 0 and 1
+        style_features = style_features / style_features.max()
+
         # Run base self.hypernet that will be input to the heads
-        base_output = self.hypernet(self.style_features)
+        base_output = self.hypernet(style_features)
 
         for i in range(len(self.hypernet_heads)):
             pred_params = self.hypernet_heads[i](base_output)
@@ -370,13 +329,10 @@ class StyleNGPField(Field):
         return new_params
     
     def update_style_img(self, img_path):
-        self.style_img_path = img_path
         print(f"new img_path is {img_path}")
 
         # Load style image
-        style_img = self.load_img(self.style_img_path)
-        # Extract features
-        self.style_features = self.feature_extractor(style_img)
+        self.style_img = load_img(img_path)
         return None
 
     def get_outputs(
@@ -410,14 +366,9 @@ class StyleNGPField(Field):
             # Get new weights
             new_params = self.update_mlp_head()
 
-            # Run normal RGB net
-            rgb = self.start_mlp_head(h).view(*outputs_shape, -1).to(directions)
-
-            # and then use the hyper network
+            # and then use the target network
             with self.hyper_mlp_head.using_externals(new_params):
-                # Input hypernet
-                # concat_input = torch.cat([d, rgb], dim=-1)
-                rgb = self.hyper_mlp_head(rgb).view(*outputs_shape, -1).to(directions)
+                rgb = self.hyper_mlp_head(h).view(*outputs_shape, -1).to(directions)
         else:
             rgb = self.start_mlp_head(h).view(*outputs_shape, -1).to(directions)
 

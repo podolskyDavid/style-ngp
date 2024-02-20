@@ -15,6 +15,10 @@ import os
 
 from nerfstudio.viewer.viewer_elements import ViewerDropdown
 
+# from style_ngp.util import compute_gram_matrix
+#
+# import math
+
 
 @dataclass
 class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
@@ -30,37 +34,37 @@ class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
         "207_065_cat5_1.5",
         "207_089_cat5_1.0",
         "207_101_sum_1.0",
-        # "207_103_cat5_1.0",
+        "207_103_cat5_1.0",
         "207_105_sum_1.0",
         "207_109_sum_0.5",
-        "207_110_sum_0.75",
-        "207_111_cat5_1.0",
-        "207_112_cat5_1.0",
-        "207_114_sum_0.75",
-        "207_117_cat5_1.0",
-        "207_201_sum_1.0",
-        "207_202_cat5_2",
-        "207_205_cat5_2",
-        # "207_207_sum_1.0",
-        "207_209_sum_1.0"
+        # "207_110_sum_0.75",
+        # "207_111_cat5_1.0",
+        # "207_112_cat5_1.0",
+        # "207_114_sum_0.75",
+        # "207_117_cat5_1.0",
+        # "207_201_sum_1.0",
+        # "207_202_cat5_2",
+        # "207_205_cat5_2",
+        # # "207_207_sum_1.0",
+        # "207_209_sum_1.0"
     ]
     style_names = [
         "case065.png",
-        "case089.png",
-        "case101.png",
-        # "case103.png",
-        "case105.png",
-        "case109.png",
-        "case110.png",
-        "case111.png",
-        "case112.png",
-        "case114.png",
-        "case117.png",
-        "case201.png",
-        "case202.png",
-        "case205.png",
-        # "case207.png",
-        "case209.png"
+        "case089_crop2.png",
+        "case101_crop1.png",
+        "case103_crop1.png",
+        "case105_crop1.png",
+        "case109_crop1.png",
+        # "case110_crop1.png",
+        # "case111.png",
+        # "case112_crop1.png",
+        # "case114_crop1.png",
+        # "case117_crop1.png",
+        # "case201.png",
+        # "case202_crop1.png",
+        # "case205.png",
+        # # "case207.png",
+        # "case209_crop1.png"
     ]
 
     def get_datasets(self):
@@ -92,13 +96,30 @@ class StyleNGPPipeline(DynamicBatchPipeline):
         self.datasets = self.config.get_datasets()
         self.style_dropdown = ViewerDropdown(
             name="Style",
-            default_value="case065.png",
+            default_value="case103_crop1.png",
             options=self.config.style_names,
             cb_hook=self.on_style_dropdown_change,
         )
         self.i = 0
-        self.structure_train_steps = 500
-        self.rgb_train_steps = 5
+        self.structure_train_steps = 400
+        self.rgb_train_steps = 50
+
+        # grams = []
+        # for style_img in self.config.style_names:
+        #     self.model.field.update_style_img(os.path.join(self.config.style_dir, style_img))
+        #     grams.append(self.model.field.style_features)
+        # # Compute pairwise differences between all elements in gram and store in a 2d array
+        # self.gram_diffs = []
+        # for i in range(len(grams)):
+        #     diffs = []
+        #     for j in range(len(grams)):
+        #         diff = math.fabs((grams[i] - grams[j]).mean().cpu().numpy().tolist())
+        #         if diff < 0.05:
+        #             print(f"Style {self.config.style_names[i]} and {self.config.style_names[j]} are very similar")
+        #         diffs.append(diff)
+        #     self.gram_diffs.append(diffs)
+        # print(f"self.gram_diffs: {self.gram_diffs}")
+
 
     def on_style_dropdown_change(self, handle: ViewerDropdown) -> None:
         # Style dropdown will only be used during inference, therefore activate hypernetwork
