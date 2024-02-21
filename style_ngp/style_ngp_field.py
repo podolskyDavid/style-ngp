@@ -333,6 +333,9 @@ class StyleNGPField(Field):
 
         # Load style image
         self.style_img = load_img(img_path)
+
+        # Add an extra dimension for the batch size and move to GPU
+        self.style_img = self.unsqueeze(0).to("cuda:0")
         return None
 
     def get_outputs(

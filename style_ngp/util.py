@@ -5,14 +5,9 @@ import numpy as np
 import torch.nn.functional as F
 from torchvision import transforms
 
-def load_img(img_path):
-    if img_path is None:
-        raise ValueError("Style image path is None.")
-
-    # Load image
-    image = imread(img_path)
-    # Remove alpha channel
-    image = image[:, :, :3]
+def crop_and_resize(image, target_size=256, mask=False):
+    """ Crop and resize the image to a square image taken from center. Be aware that the conversion to PIL and back
+    to numpy array might change the values of the pixels if they are not in the range [0, 255]."""
     # Convert the image to a PIL Image
     image = Image.fromarray(image)
     # Get the dimensions of the image
@@ -26,24 +21,67 @@ def load_img(img_path):
 
     # Crop the image to a square
     image = image.crop((left, top, right, bottom))
-    # Resize the image to 256x256
-    image = image.resize((256, 256))
+
+
+    # Resize the image
+    if mask:
+        image = image.resize((target_size, target_size), Image.NEAREST)
+    else:
+        image = image.resize((target_size, target_size))
 
     # Convert the image back to a numpy array
     image = np.array(image)
-    # Convert the image to PyTorch tensor and normalize it to [0, 1]
+
+    return image
+
+
+def load_img(img_path):
+    if img_path is None:
+        raise ValueError("Style image path is None.")
+
+    # Load image
+    image = imread(img_path)
+    # Remove alpha channel
+    image = image[:, :, :3]
+
+    # Crop and resize the image
+    image = crop_and_resize(image)
+
+    # Convert the image to PyTorch tensor and normalize it according to imagenet
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         # transforms.Lambda(lambda x: x.half())
     ])
+    # Apply transform
     image = transform(image)
 
-    # Add an extra dimension for the batch size
-    image = image.unsqueeze(0)
-    # Move image to GPU
-    image = image.to("cuda:0")
     return image
+
+
+def load_mask(mask_path, scale_factor=None):
+    if mask_path is None:
+        raise ValueError("Mask path is None.")
+
+    # Load mask
+    mask = imread(mask_path)
+    # Remove alpha channel
+    mask = mask[:, :, :3]
+
+    # Values need to be in [0, 255] for cropping and resizing; scale_factor is used to scale the mask
+    if scale_factor is not None:
+        mask = mask * scale_factor
+    # Convert to int array
+    mask = mask.astype(np.uint8)
+
+    # Crop and resize the mask
+    mask = crop_and_resize(mask, mask=True)
+
+    # Convert the mask to PyTorch tensor
+    transform = transforms.ToTensor()
+    mask = transform(mask)
+
+    return mask
 
 def compute_gram_matrix(features):
     a, b, c, d = features.size()  # a=batch size(=1)
