@@ -148,7 +148,7 @@ class StyleNGPField(Field):
         )
 
         # Add feature extractor
-        self.feature_extractor = SimpleFeatureExtractor()
+        self.feature_extractor = VGGFeatureExtractor()
 
         # Freeze the feature extractor, remains frozen throughout
         for param in self.feature_extractor.parameters():
@@ -163,9 +163,9 @@ class StyleNGPField(Field):
         features_dim = 256
         input_shapes = {'h': (features_dim,)}
 
-        num_layers_hypernet = 2
-        layer_width_hypernet = 64
-        out_hypernet = 256
+        num_layers_hypernet = 4
+        layer_width_hypernet = 32
+        out_hypernet = 64
         self.hypernet = MLP(
             in_dim=input_shapes['h'][0],
             num_layers=num_layers_hypernet,
@@ -186,7 +186,7 @@ class StyleNGPField(Field):
         print(f"input_layer_params: {input_layer_params}")
 
         layers_head = 2
-        width_head = 64
+        width_head = 32
         head = MLP(
             in_dim=out_hypernet,
             num_layers=layers_head,
@@ -231,6 +231,7 @@ class StyleNGPField(Field):
 
         # Add variables that keeps track of the style img to use
         self.style_img = None
+        self.style_features = None
 
     def get_density(self, ray_samples: RaySamples) -> Tuple[Tensor, Tensor]:
         """Computes and returns the densities."""
@@ -311,14 +312,8 @@ class StyleNGPField(Field):
         # Prepare list to store the head outputs
         pred_params_list = []
 
-        # Extract features
-        style_features = self.feature_extractor(self.style_img)
-
-        # Normalize the features between 0 and 1
-        style_features = style_features / style_features.max()
-
         # Run base self.hypernet that will be input to the heads
-        base_output = self.hypernet(style_features)
+        base_output = self.hypernet(self.style_features)
 
         for i in range(len(self.hypernet_heads)):
             pred_params = self.hypernet_heads[i](base_output)
@@ -328,15 +323,22 @@ class StyleNGPField(Field):
         new_params = {"tcnn_encoding.params": pred_params_tensor.view(-1,)}
         return new_params
     
-    def update_style_img(self, img_path):
+    def update_style_img(self, img_path, augment=False):
         print(f"new img_path is {img_path}")
 
         # Load style image
-        self.style_img = load_img(img_path)
+        style_img = load_img(img_path, augment)
 
         # Add an extra dimension for the batch size and move to GPU
-        self.style_img = self.unsqueeze(0).to("cuda:0")
-        return None
+        self.style_img = style_img.unsqueeze(0).to("cuda:0")
+
+        # Extract features
+        style_features = self.feature_extractor(self.style_img)
+
+        # Normalize the features between 0 and 1
+        self.style_features = style_features / style_features.max()
+
+        return
 
     def get_outputs(
         self, ray_samples: RaySamples, density_embedding: Optional[Tensor] = None

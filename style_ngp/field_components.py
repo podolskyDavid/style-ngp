@@ -34,11 +34,13 @@ class VGGFeatureExtractor(nn.Module):
         h = self.slice4(h)
         h = self.slice5(h)
 
-        # Don't flatten the last-layer feature maps but instead compute Gram matrix, then flatten
-        gram_matrix = compute_gram_matrix(h)
+        # # Don't flatten the last-layer feature maps but instead compute Gram matrix, then flatten
+        # gram_matrix = compute_gram_matrix(h)
+        #
+        # # Create view of (batch_size, -1) to flatten the gram matrix
+        # return gram_matrix.view(X.size(0), -1)
 
-        # Create view of (batch_size, -1) to flatten the gram matrix
-        return gram_matrix.view(X.size(0), -1)
+        return h.mean(dim=1, keepdim=True).view(h.size(0), -1)  # Flatten the feature map
 
 
 class SimpleFeatureExtractor(nn.Module):

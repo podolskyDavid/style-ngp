@@ -4,6 +4,11 @@ from PIL import Image
 import numpy as np
 import torch.nn.functional as F
 from torchvision import transforms
+from torchvision.transforms import v2
+
+
+# TODO: rewrite everything to use torch only
+
 
 def crop_and_resize(image, target_size=256, mask=False):
     """ Crop and resize the image to a square image taken from center. Be aware that the conversion to PIL and back
@@ -34,8 +39,7 @@ def crop_and_resize(image, target_size=256, mask=False):
 
     return image
 
-
-def load_img(img_path):
+def load_img(img_path, augment=False):
     if img_path is None:
         raise ValueError("Style image path is None.")
 
@@ -55,6 +59,25 @@ def load_img(img_path):
     ])
     # Apply transform
     image = transform(image)
+
+    # if augment:
+    #     techniques = [
+    #         # Takes random crop, then resizes to desired size
+    #         v2.CenterCrop(size=(256, 256)),
+    #         # Randomly rotates the image
+    #         v2.RandomRotation(degrees=(0, 180))
+    #     ]
+    #     # Apply random augmentation technique
+    #     technique = np.random.randint(len(techniques))
+    #     additional_transform = techniques[technique]
+    #     image = additional_transform(image)
+    #
+    #     # Save image in local folder for debugging
+    #     debug_image = image.numpy()
+    #     debug_image = np.moveaxis(debug_image, 0, -1)
+    #     debug_image = (debug_image * 255).astype(np.uint8)
+    #     debug_image = Image.fromarray(debug_image)
+    #     debug_image.save(f'./augmented_image.png')
 
     return image
 
@@ -82,6 +105,7 @@ def load_mask(mask_path, scale_factor=None):
     mask = transform(mask)
 
     return mask
+
 
 def compute_gram_matrix(features):
     a, b, c, d = features.size()  # a=batch size(=1)

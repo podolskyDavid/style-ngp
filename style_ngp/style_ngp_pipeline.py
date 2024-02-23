@@ -19,6 +19,8 @@ from nerfstudio.viewer.viewer_elements import ViewerDropdown
 #
 # import math
 
+import numpy as np
+
 
 @dataclass
 class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
@@ -32,39 +34,39 @@ class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
 
     data_dirs = [
         "207_065_cat5_1.5",
-        "207_089_cat5_1.0",
-        "207_101_sum_1.0",
+        # "207_089_cat5_1.0",
+        # "207_101_sum_1.0",
         # "207_103_cat5_1.0",
-        "207_105_sum_1.0",
-        "207_109_sum_0.5",
-        "207_110_sum_0.75",
-        "207_111_cat5_1.0",
-        "207_112_cat5_1.0",
-        "207_114_sum_0.75",
-        "207_117_cat5_1.0",
-        "207_201_sum_1.0",
-        "207_202_cat5_2",
-        "207_205_cat5_2",
-        # "207_207_sum_1.0",
-        "207_209_sum_1.0"
+        # "207_105_sum_1.0",
+        # "207_109_sum_0.5",
+        # "207_110_sum_0.75",
+        # "207_111_cat5_1.0",
+        # "207_112_cat5_1.0",
+        # "207_114_sum_0.75",
+        # "207_117_cat5_1.0",
+        # "207_201_sum_1.0",
+        # "207_202_cat5_2",
+        # # "207_205_cat5_2",
+        # # "207_207_sum_1.0",
+        # "207_209_sum_1.0"
     ]
     style_names = [
         "case065.png",
-        "case089_crop2.png",
-        "case101_crop1.png",
+        # "case089_crop2.png",
+        # "case101_crop1.png",
         # "case103_crop1.png",
-        "case105_crop1.png",
-        "case109_crop1.png",
-        "case110_crop1.png",
-        "case111.png",
-        "case112_crop1.png",
-        "case114_crop1.png",
-        "case117_crop1.png",
-        "case201.png",
-        "case202_crop1.png",
-        "case205.png",
-        # "case207.png",
-        "case209_crop1.png"
+        # "case105_crop1.png",
+        # "case109_crop1.png",
+        # "case110_crop1.png",
+        # "case111_crop1.png",
+        # "case112_crop1.png",
+        # "case114_crop1.png",
+        # "case117_crop1.png",
+        # "case201_crop1.png",
+        # "case202_crop1.png",
+        # # "case205.png",
+        # # "case207_crop1.png",
+        # "case209_crop1.png"
     ]
 
     def get_datasets(self):
@@ -96,13 +98,13 @@ class StyleNGPPipeline(DynamicBatchPipeline):
         self.datasets = self.config.get_datasets()
         self.style_dropdown = ViewerDropdown(
             name="Style",
-            default_value="case103_crop1.png",
+            default_value="case065.png",
             options=self.config.style_names,
             cb_hook=self.on_style_dropdown_change,
         )
-        self.i = 0
-        self.structure_train_steps = 400
-        self.rgb_train_steps = 50
+        self.current_style_index = 0
+        self.structure_train_steps = 500
+        self.rgb_train_steps = 75
 
         # grams = []
         # for style_img in self.config.style_names:
@@ -132,31 +134,20 @@ class StyleNGPPipeline(DynamicBatchPipeline):
         if step == self.structure_train_steps:
             self.model.field.activate_hypernetwork()
 
-        if step == self.structure_train_steps or (step > self.structure_train_steps and step % self.rgb_train_steps == 0):
-            # Determine a style name/identifier to save the weights
-            if self.i != 0:
-                # Use name of the style image as model identifier; dataset i - 1 to account for prev increase
-                style_name = os.path.splitext(self.datasets[self.i - 1]["style_img"])[0]
-            else:
-                # Initial data set
-                style_name = "initial_style"
+        if step == self.structure_train_steps or \
+                (step > self.structure_train_steps and step % self.rgb_train_steps == 0):
+            # Generate random index for next dataset
+            self.current_style_index = np.random.randint(len(self.datasets))
 
-            # Move to next data set
-            self.config.datamanager.data = Path(self.datasets[self.i]["data_folder"])
+            # Set the corresponding data dir
+            self.config.datamanager.data = Path(self.datasets[self.current_style_index]["data_folder"])
             self.datamanager = self.config.datamanager.setup(
                 device='cuda:0', test_mode=self.test_mode, world_size=1, local_rank=0
             )
 
             # Set the corresponding style image
-            style_img_path = self.datasets[self.i]["style_img"]
-            self.model.field.update_style_img(style_img_path)
-
-            # Keep cycling through all styles
-            if self.i == len(self.datasets) - 1:
-                print("All datasets have been trained on. Next epoch")
-                self.i = 0
-            else:
-                self.i += 1
+            style_img_path = self.datasets[self.current_style_index]["style_img"]
+            self.model.field.update_style_img(style_img_path, augment=True)
 
         model_outputs, loss_dict, metrics_dict = super().get_train_loss_dict(step)
         return model_outputs, loss_dict, metrics_dict

@@ -73,7 +73,7 @@ class HappyPlotter:
         # TODO: regenerating original texture is redundant
         all_styles.append(self.original_tex_path)
 
-        for file in os.listdir(target_folder):
+        for file in all_styles:
             if file.endswith(".png"):
                 # Get texture
                 tex = pv.read_texture(os.path.join(target_folder, file))
@@ -110,11 +110,14 @@ class HappyPlotter:
                         [[transform_matrix.GetElement(i, j) for j in range(4)] for i in range(4)]
                     )
 
-                    # It looks like something needs to be done additionally with the transform matrix
-                    # See
-                    #  https://github.com/NVlabs/instant-ngp/issues/1360
-                    #  https://github.com/colmap/colmap/issues/434
-                    #  https://github.com/NVlabs/instant-ngp/discussions/153 (most promising)
+                    # Explanation for modification of rotation and translation below:
+                    #  - transform coming from pyvista (underlying VTK) describes camera-to-world
+                    #  - example: transform would map camera origin to its world coordinates
+                    #  - for NeRF, we want world-to-camera, as everything comes down to: what does the camera see?
+                    #    instead of where is the camera in the world?
+                    #  - therefore: rotation needs to be inverted (since orthonormal matrix -> transpose) to align world
+                    #    with camera; now, instead of translating the camera to the world, we translate the world to the
+                    #    camera by using -translation, however, we need to apply the rotation to the translation as well
 
                     # Compute transpose(R) and -transpose(R) * T
                     # Syntax below: R.T is the transpose of R and @ is matrix multiplication
