@@ -30,7 +30,7 @@ from nerfstudio.field_components.mlp import MLP, MLPWithHashEncoding
 from nerfstudio.field_components.spatial_distortions import SpatialDistortion
 from nerfstudio.fields.base_field import Field, get_normalized_directions
 
-from style_ngp.field_components import VGGFeatureExtractor, SimpleFeatureExtractor
+from style_ngp.field_components import VGGFeatureExtractor, SimpleFeatureExtractor, HistogramExtractor
 from style_ngp.util import load_img
 
 import hyperlight as hl
@@ -70,9 +70,9 @@ class StyleNGPField(Field):
         base_res: int = 16,
         max_res: int = 2048,
         log2_hashmap_size: int = 19,
-        num_layers_color: int = 3,
+        num_layers_color: int = 2,
         features_per_level: int = 2,
-        hidden_dim_color: int = 16,
+        hidden_dim_color: int = 8,
         average_init_density: float = 1.0,
         implementation: Literal["tcnn", "torch"] = "tcnn",
     ) -> None:
@@ -148,11 +148,11 @@ class StyleNGPField(Field):
         )
 
         # Add feature extractor
-        self.feature_extractor = VGGFeatureExtractor()
+        self.feature_extractor = HistogramExtractor()
 
-        # Freeze the feature extractor, remains frozen throughout
-        for param in self.feature_extractor.parameters():
-            param.requires_grad = False
+        # # Freeze the feature extractor, remains frozen throughout
+        # for param in self.feature_extractor.parameters():
+        #     param.requires_grad = False
 
         # Add rgb transform net that will be controlled by hypernets
         self.hyper_mlp_head = hl.hypernetize(self.hyper_mlp_head, [self.hyper_mlp_head.tcnn_encoding])
@@ -160,14 +160,13 @@ class StyleNGPField(Field):
         print(f"weights_shape: {weights_shape}")
 
         # TODO: hardcoded here, needs to be changed later
-        features_dim = 256
-        input_shapes = {'h': (features_dim,)}
+        features_dim = 96
 
         num_layers_hypernet = 4
         layer_width_hypernet = 32
-        out_hypernet = 64
+        out_hypernet = 128
         self.hypernet = MLP(
-            in_dim=input_shapes['h'][0],
+            in_dim=features_dim,
             num_layers=num_layers_hypernet,
             layer_width=layer_width_hypernet,
             out_dim=out_hypernet,
@@ -186,7 +185,7 @@ class StyleNGPField(Field):
         print(f"input_layer_params: {input_layer_params}")
 
         layers_head = 2
-        width_head = 32
+        width_head = 64
         head = MLP(
             in_dim=out_hypernet,
             num_layers=layers_head,
@@ -323,21 +322,9 @@ class StyleNGPField(Field):
         new_params = {"tcnn_encoding.params": pred_params_tensor.view(-1,)}
         return new_params
     
-    def update_style_img(self, img_path, augment=False):
-        print(f"new img_path is {img_path}")
-
-        # Load style image
-        style_img = load_img(img_path, augment)
-
-        # Add an extra dimension for the batch size and move to GPU
-        self.style_img = style_img.unsqueeze(0).to("cuda:0")
-
-        # Extract features
-        style_features = self.feature_extractor(self.style_img)
-
-        # Normalize the features between 0 and 1
-        self.style_features = style_features / style_features.max()
-
+    def update_style_img(self, img_path):
+        # Compute style features and move to GPU
+        self.style_features = self.feature_extractor.get_hist(img_path).to("cuda:0")
         return
 
     def get_outputs(
