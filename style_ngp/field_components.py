@@ -81,6 +81,28 @@ class HistogramExtractor:
         return hist_flattened
 
 
+    def get_moments(self, img_path):
+        # Load the image directly into a tensor
+        image_tensor = torchvision.io.read_image(img_path).float() / 255.0
+
+        moments = torch.zeros((3, 3))
+
+        # Calculate the mean, standard deviation, and skew for each channel
+        for i in range(3):
+            std, mean = torch.std_mean(image_tensor[i])
+            median = torch.median(image_tensor[i])
+            # Skew as per Pearson's second coefficient of skewness
+            skew = 3 * (mean - median) / std
+            moments[i] = torch.tensor([mean, std, skew])
+
+        # Flatten to use as input to neural network
+        moments = moments.view(1, -1)
+
+        print(f"moments: {moments}")
+
+        return moments
+
+
 class SimpleFeatureExtractor(nn.Module):
     def __init__(self):
         super().__init__()

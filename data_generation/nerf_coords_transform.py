@@ -2,6 +2,7 @@ import json
 import numpy as np
 import argparse
 
+
 # Code adapted from https://github.com/NVlabs/instant-ngp/issues/658
 def nerfstudio_to_ngp(current_transform):
     # Assuming that I am in OpenGL with NerfStudio
@@ -122,10 +123,12 @@ def convert_transform(input_filename):
 
     return data
 
+
 def get_argparser():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--file', type=str, help='Path to the input JSON file')
     return argparser
+
 
 if __name__ == '__main__':
     # Get args
