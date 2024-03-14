@@ -1,40 +1,7 @@
 import json
 import numpy as np
 import argparse
-
-
-# Code adapted from https://github.com/NVlabs/instant-ngp/issues/658
-def nerfstudio_to_ngp(current_transform):
-    # Assuming that I am in OpenGL with NerfStudio
-
-    # Transformation matrix for coordinate system conversion to ngp
-    transformation_matrix = np.array([[0, 1,  0, 0],
-                                      [1, 0,  0, 0],
-                                      [0, 0, -1, 0],
-                                      [0, 0,  0, 1]])
-    new_pose_matrix = transformation_matrix @ current_transform
-    return new_pose_matrix
-
-
-def nerf_to_ngp(xf):
-    mat = np.copy(xf)
-    mat[:, 1] *= -1 #flip axis
-    mat[:, 2] *= -1
-    mat = mat[[1, 2, 0, 3], :]
-    return mat
-
-
-def ngp_to_nerf(xf):
-    mat = np.copy(xf)
-    # mat[:,3] -= 0.025
-    mat = mat[[2, 0, 1], :]  # swap axis
-    mat[:, 1] *= -1  # flip axis
-    mat[:, 2] *= -1
-
-    mat[:, 3] -= [0.5, 0.5, 0.5]  # translation and re-scale
-    mat[:, 3] /= 0.33
-
-    return mat
+from util import switch_coord_system
 
 
 def closest_point_2_lines(oa, da, ob, db): # returns point closest to both rays of form o+t*d, and a weight factor that goes to 0 if the lines are parallel
@@ -86,7 +53,7 @@ def scale_for_ngp(frames):
         np_new_frame = np.array(new_frames[i]["transform_matrix"])
         np_new_frame[:3,3] *= 3. / avglen # scale to "nerf sized"
         # Sneaking in flipping of axes to go from nerfstudio to ngp coord system
-        new_frames[i]["transform_matrix"] = nerfstudio_to_ngp(np_new_frame).tolist()
+        new_frames[i]["transform_matrix"] = switch_coord_system(np_new_frame).tolist()
 
     # find a central point they are all looking at
     print("computing center of attention...")
@@ -107,38 +74,102 @@ def scale_for_ngp(frames):
         current_transform[0:3, 3] -= totp
         new_frames[i]["transform_matrix"] = current_transform.tolist()
 
-    return new_frames.tolist()
+    return new_frames.tolist(), centroid, avglen, totp
 
 
-def convert_transform(input_filename):
+def convert_transform(input_filename, gt_filename, targets_filenames):
     # Load the original transformation matrix from the JSON file
     with open(input_filename, 'r') as file:
         data = json.load(file)
 
     frames = data['frames']
 
-    transformed_frames = scale_for_ngp(frames)
+    transformed_frames, centroid, avglen, totp = scale_for_ngp(frames)
 
     data['frames'] = transformed_frames
 
-    return data
+    # If a ground truth file is provided, load and transform it
+    if gt_filename is not None:
+        with open(gt_filename, 'r') as file:
+            gt_data = json.load(file)
 
+        gt_transform = np.array(gt_data['transform_matrix'])
+
+        # Subtract the centroid, flip axes, and scale
+        gt_transform[:3, 3] -= centroid
+        gt_transform[:3, 3] *= 3. / avglen
+        gt_transform = switch_coord_system(gt_transform)
+        gt_transform[:3, 3] -= totp
+
+        # Write the transformed ground truth pose to a new JSON file
+        gt_output_filename = gt_filename.replace('.json', '_ngp.json')
+        with open(gt_output_filename, 'w') as file:
+            json.dump(
+                {'transform_matrix': gt_transform.tolist(),
+                 'centroid': centroid.tolist(),
+                 'avglen': avglen,
+                 'totp': totp.tolist()},
+                file,
+                indent=4
+            )
+        print(f"Converted ground truth transformation matrix written to {gt_output_filename}")
+
+    # If a targets file is provided, load and transform it
+    if targets_filenames is not None:
+        for targets_filename in targets_filenames:
+            with open(targets_filename, 'r') as file:
+                targets_data = json.load(file)
+
+            # Iterate through the targets
+            for target in targets_data['targets']:
+                # Extract the init_pose and target_pose
+                init_pose = np.array(target['init_pose'])
+                target_pose = np.array(target['target_pose'])
+
+                # Subtract the centroid, flip axes, and scale
+                init_pose[:3, 3] -= centroid
+                init_pose[:3, 3] *= 3. / avglen
+                init_pose = switch_coord_system(init_pose)
+                init_pose[:3, 3] -= totp
+
+                target_pose[:3, 3] -= centroid
+                target_pose[:3, 3] *= 3. / avglen
+                target_pose = switch_coord_system(target_pose)
+                target_pose[:3, 3] -= totp
+
+                # Add the transformed poses back to the target dictionary
+                target['init_pose_ngp'] = init_pose.tolist()
+                target['target_pose_ngp'] = target_pose.tolist()
+
+            # Also add the transformation parameters
+            targets_data['centroid'] = centroid.tolist()
+            targets_data['avglen'] = avglen
+            targets_data['totp'] = totp.tolist()
+
+            # Write the transformed targets to a new JSON file
+            targets_output_filename = targets_filename.replace('.json', '_ngp.json')
+            with open(targets_output_filename, 'w') as file:
+                json.dump(targets_data, file, indent=4)
+            print(f"Converted targets written to {targets_output_filename}")
+
+    return data
 
 def get_argparser():
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--file', type=str, help='Path to the input JSON file')
+    argparser.add_argument('--transforms_file', type=str, help='Path to the input JSON file')
+    argparser.add_argument('--gt_file', type=str, help='Path to the ground truth JSON file that can also be transformed', default=None)
+    argparser.add_argument('--targets_files', type=str, nargs='+', help='Paths to the targets JSON files that can be transformed', default=None)
     return argparser
-
 
 if __name__ == '__main__':
     # Get args
     args = get_argparser().parse_args()
 
     # Example usage
-    transformed_data = convert_transform(args.file)
+    transformed_data = convert_transform(args.transforms_file, args.gt_file, args.targets_files)
 
     # Write the updated transformation matrix to a new JSON file
-    output_filename = args.file.replace('.json', '_ngp.json')
+    output_filename = args.transforms_file.replace('.json', '_ngp.json')
     with open(output_filename, 'w') as file:
         json.dump(transformed_data, file, indent=4)
     print(f"Converted transformation matrix written to {output_filename}")

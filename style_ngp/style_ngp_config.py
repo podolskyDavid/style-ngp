@@ -35,7 +35,8 @@ style_ngp = MethodSpecification(
         method_name="style-ngp",
         steps_per_eval_batch=500,
         steps_per_save=2000,
-        max_num_iterations=6000,
+        # MICCAI config
+        max_num_iterations=50000,
         mixed_precision=True,
         pipeline=StyleNGPPipelineConfig(
             datamanager=VanillaDataManagerConfig(

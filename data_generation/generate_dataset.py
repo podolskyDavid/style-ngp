@@ -5,10 +5,10 @@ import shutil
 import math
 import numpy as np
 import argparse
-
+from util import apply_padding
 
 class HappyPlotter:
-    def __init__(self, num_poses, original_tex_path, background='black', width=512, height=512):
+    def __init__(self, num_poses, original_tex_path, tex_size, roi_size, roi_pos, background='black', width=512, height=512):
         # Create a plotter
         self.plotter = pv.Plotter(off_screen=False)
 
@@ -21,7 +21,21 @@ class HappyPlotter:
 
         # Original texture to apply to the mesh
         self.original_tex_path = original_tex_path
-        tex = pv.read_texture(self.original_tex_path)
+
+        self.tex_size = tex_size
+        self.roi_size = roi_size
+        self.roi_pos = roi_pos
+
+        # If padding is necessary, apply
+        if tex_size is not None:
+            # TODO: this assumes that images are .png, fix later!
+            new_img_path = self.original_tex_path.replace('.png', '_temp.png')
+            apply_padding(self.original_tex_path, new_img_path, self.tex_size, self.roi_size, self.roi_pos)
+            self.original_tex_path = self.original_tex_path.replace('.png', '_temp.png')
+            tex = pv.read_texture(new_img_path)
+        else:
+            tex = pv.read_texture(self.original_tex_path)
+
 
         # Add the mesh to the plotter
         self.plotter.add_mesh(mesh, texture=tex, lighting=False)
@@ -36,7 +50,6 @@ class HappyPlotter:
         self.num_poses = num_poses
         # tracking; property because used in callback
         self.i = 0
-
 
     # Triggered by key event
     def get_camera(self):
@@ -69,16 +82,25 @@ class HappyPlotter:
         self.plotter.show(auto_close=False, interactive_update=True)
 
         all_styles = os.listdir(target_folder)
-        # Add original texture as well
-        # TODO: regenerating original texture is redundant
-        all_styles.append(self.original_tex_path)
 
         for file in all_styles:
-            if file.endswith(".png"):
-                # Get texture
-                tex = pv.read_texture(os.path.join(target_folder, file))
+            # Take all styles, except any temp, e.g., from the original texture
+            if file.endswith(".png") and '_temp' not in file:
+                img_path = os.path.join(target_folder, file)
+
+                # Might have to apply padding to fit image to mesh
+                if self.tex_size is not None:
+                    new_img_path = img_path.replace('.png', '_temp.png')
+                    apply_padding(img_path, new_img_path, self.tex_size, self.roi_size, self.roi_pos)
+                    tex = pv.read_texture(new_img_path)
+                else:
+                    print(f"loading {img_path}")
+                    tex = pv.read_texture(img_path)
+
+                self.plotter.clear()
 
                 # Apply texture to mesh
+                print(f"applying texture to mesh")
                 self.plotter.add_mesh(mesh, texture=tex, lighting=False)
 
                 # Split the filename from the file extension
@@ -177,6 +199,9 @@ def argparser():
     parser.add_argument('--target_folder_path', type=str, help='Path to folder with textures')
     parser.add_argument('--original_texture_path', type=str, help='Path to original texture')
     parser.add_argument('--num_poses', type=int, default=100, help='Number of poses to generate')
+    parser.add_argument('--tex_size', type=int, nargs=2, default=None, help='Size of the texture')
+    parser.add_argument('--roi_size', type=int, nargs=2, default=None, help='Size of the region of interest')
+    parser.add_argument('--roi_pos', type=int, nargs=2, default=None, help='Position of the region of interest')
     parser.add_argument('--width', type=int, default=512, help='Width of the images to be generated')
     parser.add_argument('--height', type=int, default=512, help='Height of the images to be generated')
     return parser.parse_args()
@@ -192,6 +217,9 @@ if __name__ == '__main__':
     my_plotter = HappyPlotter(
         num_poses=args.num_poses,
         original_tex_path=args.original_texture_path,
+        tex_size=args.tex_size,
+        roi_size=args.roi_size,
+        roi_pos=args.roi_pos,
         width=args.width,
         height=args.height
     )
