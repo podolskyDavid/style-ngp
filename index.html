@@ -24,7 +24,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
-  <title>Academic Project Page</title>
+  <title>Intraoperative Registration by Cross-Modal Inverse Neural Rendering</title>
   <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
   rel="stylesheet">
@@ -43,6 +43,51 @@
   <script src="static/js/bulma-carousel.min.js"></script>
   <script src="static/js/bulma-slider.min.js"></script>
   <script src="static/js/index.js"></script>
+
+  <style>
+    .slider-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh; /* Adjust this to your preferred height */
+    }
+
+    .comparison-container {
+      position: relative;
+      max-width: 600px; /* Adjust this to the width of your images */
+      width: 100%;
+    }
+
+    .comparison-image-overlay {
+      width: 50%; /* Initial overlay width */
+      overflow: hidden; /* This will hide the part of the image that overflows the div width */
+    }
+
+    .comparison-image, .comparison-slider {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .comparison-image {
+      display: block;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* Additional styles for the slider (no change needed) */
+    .comparison-slider {
+      z-index: 9;
+      cursor: ew-resize;
+      width: 40px;
+      height: 40px;
+      background-color: #ffffff;
+      border: 1px solid #dddddd;
+      border-radius: 50%;
+      left: 50%;
+      /* Removed the transform property from here since it's added to both images and slider above */
+    }
+  </style>
 </head>
 <body>
 
@@ -52,68 +97,84 @@
       <div class="container is-max-desktop">
         <div class="columns is-centered">
           <div class="column has-text-centered">
-            <h1 class="title is-1 publication-title">Academic Project Page</h1>
-            <div class="is-size-5 publication-authors">
-              <!-- Paper authors -->
-              <span class="author-block">
-                <a href="FIRST AUTHOR PERSONAL LINK" target="_blank">First Author</a><sup>*</sup>,</span>
-                <span class="author-block">
-                  <a href="SECOND AUTHOR PERSONAL LINK" target="_blank">Second Author</a><sup>*</sup>,</span>
-                  <span class="author-block">
-                    <a href="THIRD AUTHOR PERSONAL LINK" target="_blank">Third Author</a>
-                  </span>
-                  </div>
+            <h1 class="title is-1 publication-title">Intraoperative Registration by Cross-Modal Inverse Neural Rendering</h1>
+<!--            <div class="is-size-5 publication-authors">-->
+<!--              &lt;!&ndash; Paper authors &ndash;&gt;-->
+<!--              <span class="author-block">-->
+<!--                Maximilian Fehrentz<sup>1,2</sup>,</span>-->
+<!--                <span class="author-block">-->
+<!--                  <a href="https://scholar.google.com/citations?user=MQcHEBsAAAAJ&hl=de&oi=ao" target="_blank">Mohammad Farid Azampour</a><sup>1</sup>,</span>-->
+<!--                  <span class="author-block">-->
+<!--                    <a href="https://scholar.google.com/citations?user=xdECLMkAAAAJ&hl=de&oi=ao" target="_blank">Reuben Dorent</a><sup>2</sup>,</span>-->
+<!--                    <span class="author-block">-->
+<!--                      Hassan Rasheed<sup>1</sup>,</span>-->
+<!--                      <span class="author-block">-->
+<!--                        Colin Galvin<sup>2</sup>,</span>-->
+<!--                        <span class="author-block">-->
+<!--                          <a href="https://scholar.google.com/citations?user=3AFVSiYAAAAJ&hl=de&oi=ao" target="_blank">Alexandra Golby</a><sup>2</sup>,</span>-->
+<!--                          <span class="author-block">-->
+<!--                            <a href="https://scholar.google.com/citations?user=DwXLsT8AAAAJ&hl=de&oi=ao" target="_blank">Sandy Wells</a><sup>2,3</sup>,</span>-->
+<!--                              <span class="author-block">-->
+<!--                                <a href="https://scholar.google.com/citations?user=Cl3W1LEAAAAJ&hl=de&oi=ao" target="_blank">Sarah Frisken</a><sup>2</sup>,</span>-->
+<!--                                <span class="author-block">-->
+<!--                                  <a href="https://scholar.google.com/citations?user=kzoVUPYAAAAJ&hl=de&oi=ao" target="_blank">Nassir Navab</a><sup>1</sup>,</span>-->
+<!--                                  <span class="author-block">-->
+<!--                                    <a href="https://scholar.google.com/citations?user=PjpzomsAAAAJ&hl=de&oi=ao" target="_blank">Nazim Haouchine</a><sup>2</sup></span>-->
+<!--                  </div>-->
 
-                  <div class="is-size-5 publication-authors">
-                    <span class="author-block">Institution Name<br>Conferance name and year</span>
-                    <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span>
-                  </div>
+<!--                  <div class="is-size-5 publication-authors">-->
+<!--                    <span class="author-block"><sup>1</sup>Computer Aided Medical Procedures, Technical University of Munich<br>-->
+<!--                      <sup>2</sup>BWH, Harvard Medical School<br>-->
+<!--                      <sup>3</sup>CSAIL, MIT<br>-->
+<!--                      </span>-->
+<!--                  </div>-->
 
                   <div class="column has-text-centered">
                     <div class="publication-links">
                          <!-- Arxiv PDF link -->
-                      <span class="link-block">
-                        <a href="https://arxiv.org/pdf/<ARXIV PAPER ID>.pdf" target="_blank"
-                        class="external-link button is-normal is-rounded is-dark">
-                        <span class="icon">
-                          <i class="fas fa-file-pdf"></i>
-                        </span>
-                        <span>Paper</span>
-                      </a>
-                    </span>
+<!--                      <span class="link-block">-->
+<!--                        <a href="https://arxiv.org/pdf/<ARXIV PAPER ID>.pdf" target="_blank"-->
+<!--                        class="external-link button is-normal is-rounded is-dark">-->
+<!--                        <span class="icon">-->
+<!--                          <i class="fas fa-file-pdf"></i>-->
+<!--                        </span>-->
+<!--                        <span>Paper</span>-->
+<!--                      </a>-->
+<!--                    </span>-->
 
                     <!-- Supplementary PDF link -->
                     <span class="link-block">
-                      <a href="static/pdfs/supplementary_material.pdf" target="_blank"
+                      <a href="static/pdfs/paper.pdf" target="_blank"
                       class="external-link button is-normal is-rounded is-dark">
                       <span class="icon">
                         <i class="fas fa-file-pdf"></i>
                       </span>
-                      <span>Supplementary</span>
+                      <span>Paper</span>
                     </a>
                   </span>
 
                   <!-- Github link -->
                   <span class="link-block">
-                    <a href="https://github.com/YOUR REPO HERE" target="_blank"
+<!--                    <a href="https://github.com/maxfehrentz/style-ngp" target="_blank"-->
+                    <a href="https://none" target="_blank"
                     class="external-link button is-normal is-rounded is-dark">
                     <span class="icon">
                       <i class="fab fa-github"></i>
                     </span>
-                    <span>Code</span>
+                    <span>Code coming soon</span>
                   </a>
                 </span>
 
                 <!-- ArXiv abstract Link -->
-                <span class="link-block">
-                  <a href="https://arxiv.org/abs/<ARXIV PAPER ID>" target="_blank"
-                  class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon">
-                    <i class="ai ai-arxiv"></i>
-                  </span>
-                  <span>arXiv</span>
-                </a>
-              </span>
+<!--                <span class="link-block">-->
+<!--                  <a href="https://arxiv.org/abs/<ARXIV PAPER ID>" target="_blank"-->
+<!--                  class="external-link button is-normal is-rounded is-dark">-->
+<!--                  <span class="icon">-->
+<!--                    <i class="ai ai-arxiv"></i>-->
+<!--                  </span>-->
+<!--                  <span>arXiv</span>-->
+<!--                </a>-->
+<!--              </span>-->
             </div>
           </div>
         </div>
@@ -122,23 +183,23 @@
   </div>
 </section>
 
-
-<!-- Teaser video-->
+<!-- Overview video -->
 <section class="hero teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
-      <video poster="" id="tree" autoplay controls muted loop height="100%">
+      <video poster="" id="overview" autoplay controls muted loop width="100%">
         <!-- Your video here -->
-        <source src="static/videos/banner_video.mp4"
+        <source src="static/videos/registration/overview.mp4"
         type="video/mp4">
       </video>
       <h2 class="subtitle has-text-centered">
-        Aliquam vitae elit ullamcorper tellus egestas pellentesque. Ut lacus tellus, maximus vel lectus at, placerat pretium mi. Maecenas dignissim tincidunt vestibulum. Sed consequat hendrerit nisl ut maximus. 
+        For a given intraoperative target image (lower left corner), we estimate the camera pose that aligns our stylized NeRF with the intraoperative image, thereby registering the preoperative scan to the intraoperative image.
       </h2>
     </div>
   </div>
 </section>
-<!-- End teaser video -->
+<!-- End changing appearance -->
+
 
 <!-- Paper abstract -->
 <section class="section hero is-light">
@@ -148,7 +209,7 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ullamcorper tellus sed ante aliquam tempus. Etiam porttitor urna feugiat nibh elementum, et tempor dolor mattis. Donec accumsan enim augue, a vulputate nisi sodales sit amet. Proin bibendum ex eget mauris cursus euismod nec et nibh. Maecenas ac gravida ante, nec cursus dui. Vivamus purus nibh, placerat ac purus eget, sagittis vestibulum metus. Sed vestibulum bibendum lectus gravida commodo. Pellentesque auctor leo vitae sagittis suscipit.
+            We present in this paper a novel approach for 3D/2D intraoperative registration during neurosurgery via cross-modal inverse neural rendering. Our approach separates implicit neural representation into two components, handling anatomical structure preoperatively and appearance intraoperatively. This disentanglement is achieved by controlling a Neural Radiance Field’s appearance with a multi-style hypernetwork. Once trained, the implicit neural representation serves as a differentiable rendering engine, which can be used to estimate the surgical camera pose by minimizing the dissimilarity between its rendered images and the target intraoperative image. We tested our method on retrospective patients’ data from clinical cases, showing that our method outperforms state-of-the-art while meeting current clinical standards for registration.
           </p>
         </div>
       </div>
@@ -158,129 +219,359 @@
 <!-- End paper abstract -->
 
 
-<!-- Image carousel -->
-<section class="hero is-small">
+<!-- Pipeline figure -->
+<section class="hero is-small is-light">
   <div class="hero-body">
     <div class="container">
-      <div id="results-carousel" class="carousel results-carousel">
-       <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel1.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-          First image description.
-        </h2>
-      </div>
-      <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel2.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-          Second image description.
-        </h2>
-      </div>
-      <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel3.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-         Third image description.
-       </h2>
-     </div>
-     <div class="item">
-      <!-- Your image here -->
-      <img src="static/images/carousel4.jpg" alt="MY ALT TEXT"/>
+      <h2 class="title">Pipeline Overview</h2>
+
+      <iframe src="static/pdfs/pipeline.pdf" style="width:100%; height:485px; border:none;">
+</iframe>
       <h2 class="subtitle has-text-centered">
-        Fourth image description.
+        Left (preoperative): We use a NeRF to first learn density/anatomy (orange) from a mesh M extracted from an MR scan, then learn single-shot style adaptation (blue) through a hypernetwork h while freezing the rest of the NeRF, keeping the previously learned density fixed. Right (intraoperative): Iterative pose estimation on target I. The trained NeRF and hypernet (green highlights) are used as style-conditioned neural rendering engine using ray casting, with f adapted to the appearance of the intraoperative registration target I through the hypernetwork h.
       </h2>
-    </div>
-  </div>
-</div>
-</div>
-</section>
-<!-- End image carousel -->
-
-
-
-
-<!-- Youtube video -->
-<section class="hero is-small is-light">
-  <div class="hero-body">
-    <div class="container">
-      <!-- Paper video. -->
-      <h2 class="title is-3">Video Presentation</h2>
-      <div class="columns is-centered has-text-centered">
-        <div class="column is-four-fifths">
-          
-          <div class="publication-video">
-            <!-- Youtube embed code here -->
-            <iframe src="https://www.youtube.com/embed/JkaxUblCGz0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<!-- End youtube video -->
-
-
-<!-- Video carousel -->
-<section class="hero is-small">
-  <div class="hero-body">
-    <div class="container">
-      <h2 class="title is-3">Another Carousel</h2>
-      <div id="results-carousel" class="carousel results-carousel">
-        <div class="item item-video1">
-          <video poster="" id="video1" autoplay controls muted loop height="100%">
-            <!-- Your video file here -->
-            <source src="static/videos/carousel1.mp4"
-            type="video/mp4">
-          </video>
-        </div>
-        <div class="item item-video2">
-          <video poster="" id="video2" autoplay controls muted loop height="100%">
-            <!-- Your video file here -->
-            <source src="static/videos/carousel2.mp4"
-            type="video/mp4">
-          </video>
-        </div>
-        <div class="item item-video3">
-          <video poster="" id="video3" autoplay controls muted loop height="100%">\
-            <!-- Your video file here -->
-            <source src="static/videos/carousel3.mp4"
-            type="video/mp4">
-          </video>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<!-- End video carousel -->
-
-
-
-
-
-
-<!-- Paper poster -->
-<section class="hero is-small is-light">
-  <div class="hero-body">
-    <div class="container">
-      <h2 class="title">Poster</h2>
-
-      <iframe src="static/pdfs/sample.pdf" width="100%" height="550">
-          </iframe>
-        
       </div>
     </div>
   </section>
-<!--End paper poster -->
+<!--Pipeline figure -->
+
+<!-- Synthesis header -->
+<section class="section hero">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Synthesis</h2>
+        <div class="content has-text-justified">
+          <p>
+            Our method renders novel views with varying appearances while keeping a fixed anatomical structure. Given that our NeRF is created from and registered to a preoperative scan, we can render novel views with intraoperative appearance and relate it back to the preoperative volume.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End Synthesis header -->
+
+<!-- Changing appearance-->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <video poster="" id="changing_appearance" autoplay controls muted loop height="100%">
+        <!-- Your video here -->
+        <source src="static/videos/changing_appearance.mp4"
+        type="video/mp4">
+      </video>
+      <h2 class="subtitle has-text-centered">
+        Switching styles on the fly with our hypernet-controlled NeRF.
+      </h2>
+    </div>
+  </div>
+</section>
+<!-- End changing appearance -->
+
+<!-- 207 synthesis sliders -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <!-- Images below the video -->
+      <div class="columns">
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/207/synthesis/15.png" width="100%"/>
+            <img slot="second" src="static/images/207/mr/15.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/207/synthesis/27.png" width="100%"/>
+            <img slot="second" src="static/images/207/mr/27.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/207/synthesis/47.png" width="100%"/>
+            <img slot="second" src="static/images/207/mr/47.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/207/synthesis/58.png" width="100%"/>
+            <img slot="second" src="static/images/207/mr/58.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+      </div>
+
+      <h2 class="subtitle has-text-centered">
+        Synthesis on one of the clinical cases using our method. Background: mesh of preoperative scan. Overlay: rendered image from our method.
+      </h2>
+    </div>
+  </div>
+</section>
+<!-- End 207 synthesis sliders -->
+
+<!-- Camera path video-->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <video poster="" id="cam_path" autoplay controls muted loop height="100%">
+        <!-- Your video here -->
+        <source src="static/videos/paths/paths_000.mp4"
+        type="video/mp4">
+      </video>
+      <h2 class="subtitle has-text-centered">
+        Synthesis with our hypernet-controlled NeRF on different styles.
+      </h2>
+    </div>
+  </div>
+</section>
+<!-- Camera path video -->
+
+<!-- Registration header -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Registration</h2>
+        <div class="content has-text-justified">
+          <p>
+            Using the NeRF, conditioned on the intraoperative image via the hypernet, we perform registration.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End Registration header -->
+
+<!-- Registration video -->
+<section class="hero teaser is-light">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <video poster="" id="registration_207" autoplay controls muted height="100%">
+        <!-- Your video here -->
+        <source src="static/videos/registration/registration_207.mp4"
+        type="video/mp4">
+      </video>
+      <h2 class="subtitle has-text-centered">
+        Registration on one of the clinical cases using our method.
+      </h2>
+    </div>
+  </div>
+</section>
+<!-- End changing appearance -->
+
+<!-- Registration sliders -->
+<section class="hero teaser is-light">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <!-- Images below the video -->
+      <div class="columns">
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/003/registration.png" width="100%"/>
+            <img slot="second" src="static/images/003/target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/089/registration.png" width="100%"/>
+            <img slot="second" src="static/images/089/089_target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/207/registration.png" width="100%"/>
+            <img slot="second" src="static/images/207/target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/209/registration.png" width="100%"/>
+            <img slot="second" src="static/images/209/target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+      </div>
+
+      <h2 class="subtitle has-text-centered">
+        Registration of all clinical cases. Background: intraoperative image from surgical microscope. Overlay: rendered image from our method.
+      </h2>
+    </div>
+  </div>
+</section>
+<!-- Registration sliders -->
+
+
+<!-- Registration sliders outline -->
+<section class="hero teaser is-light">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <!-- Images below the video -->
+      <div class="columns">
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/003/overlay.png" width="100%"/>
+            <img slot="second" src="static/images/003/target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/089/overlay.png" width="100%"/>
+            <img slot="second" src="static/images/089/089_target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/207/overlay.png" width="100%"/>
+            <img slot="second" src="static/images/207/target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+        <div class="column">
+          <img-comparison-slider hover="hover">
+            <img slot="first" src="static/images/209/overlay.png" width="100%"/>
+            <img slot="second" src="static/images/209/target_adjusted.png" width="100%"/>
+          </img-comparison-slider>
+        </div>
+      </div>
+
+      <h2 class="subtitle has-text-centered">
+        Registration of all clinical cases. Background: intraoperative image from surgical microscope. Overlay: Vessel outlines as observed from estimated pose.
+      </h2>
+    </div>
+  </div>
+</section>
+<!-- Registration sliders overlays -->
+
+<!--&lt;!&ndash; Image carousel &ndash;&gt;-->
+<!--<section class="hero is-small">-->
+<!--  <div class="hero-body">-->
+<!--    <div class="container">-->
+<!--      <div id="results-carousel" class="carousel results-carousel">-->
+<!--       <div class="item">-->
+<!--        &lt;!&ndash; Your image here &ndash;&gt;-->
+<!--        <img src="static/images/carousel1.jpg" alt="MY ALT TEXT"/>-->
+<!--        <h2 class="subtitle has-text-centered">-->
+<!--          First image description.-->
+<!--        </h2>-->
+<!--      </div>-->
+<!--      <div class="item">-->
+<!--        &lt;!&ndash; Your image here &ndash;&gt;-->
+<!--        <img src="static/images/carousel2.jpg" alt="MY ALT TEXT"/>-->
+<!--        <h2 class="subtitle has-text-centered">-->
+<!--          Second image description.-->
+<!--        </h2>-->
+<!--      </div>-->
+<!--      <div class="item">-->
+<!--        &lt;!&ndash; Your image here &ndash;&gt;-->
+<!--        <img src="static/images/carousel3.jpg" alt="MY ALT TEXT"/>-->
+<!--        <h2 class="subtitle has-text-centered">-->
+<!--         Third image description.-->
+<!--       </h2>-->
+<!--     </div>-->
+<!--     <div class="item">-->
+<!--      &lt;!&ndash; Your image here &ndash;&gt;-->
+<!--      <img src="static/images/carousel4.jpg" alt="MY ALT TEXT"/>-->
+<!--      <h2 class="subtitle has-text-centered">-->
+<!--        Fourth image description.-->
+<!--      </h2>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+<!--</div>-->
+<!--</section>-->
+<!--&lt;!&ndash; End image carousel &ndash;&gt;-->
+<!--  -->
+<!--&lt;!&ndash; Youtube video &ndash;&gt;-->
+<!--<section class="hero is-small is-light">-->
+<!--  <div class="hero-body">-->
+<!--    <div class="container">-->
+<!--      &lt;!&ndash; Paper video. &ndash;&gt;-->
+<!--      <h2 class="title is-3">Video Presentation</h2>-->
+<!--      <div class="columns is-centered has-text-centered">-->
+<!--        <div class="column is-four-fifths">-->
+<!--          -->
+<!--          <div class="publication-video">-->
+<!--            &lt;!&ndash; Youtube embed code here &ndash;&gt;-->
+<!--            <iframe src="https://www.youtube.com/embed/JkaxUblCGz0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</section>-->
+<!--&lt;!&ndash; End youtube video &ndash;&gt;-->
+
+<!--&lt;!&ndash; Video carousel &ndash;&gt;-->
+<!--<section class="hero is-small">-->
+<!--      <div id="results-carousel" class="carousel results-carousel">-->
+<!--        <div class="item item-video1">-->
+<!--          <div class="columns">-->
+<!--            <div class="column">-->
+<!--              <video poster="" id="reg1" autoplay controls muted height="50%" width="100%">-->
+<!--                &lt;!&ndash; Your video file here &ndash;&gt;-->
+<!--                <source src="static/videos/registration/003_reg.mp4"-->
+<!--                type="video/mp4">-->
+<!--              </video>-->
+<!--            </div>-->
+<!--            <div class="column">-->
+<!--              <img src="static/images/003/target_adjusted.png" alt="Image 1">-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--        <div class="item item-video2">-->
+<!--          <div class="columns">-->
+<!--            <div class="column">-->
+<!--              <video poster="" id="reg2" autoplay controls muted height="50%" width="100%">-->
+<!--                &lt;!&ndash; Your video file here &ndash;&gt;-->
+<!--                <source src="static/videos/registration/089_reg.mp4"-->
+<!--                type="video/mp4">-->
+<!--              </video>-->
+<!--            </div>-->
+<!--            <div class="column">-->
+<!--              <img src="static/images/089/089_target_adjusted.png" alt="Image 2">-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--        <div class="item item-video3">-->
+<!--          <div class="columns">-->
+<!--            <div class="column">-->
+<!--              <video poster="" id="reg3" autoplay controls muted height="50%" width="100%">-->
+<!--                &lt;!&ndash; Your video file here &ndash;&gt;-->
+<!--                <source src="static/videos/registration/207_reg.mp4"-->
+<!--                type="video/mp4">-->
+<!--              </video>-->
+<!--            </div>-->
+<!--            <div class="column">-->
+<!--              <img src="static/images/207/target_adjusted.png" alt="Image 3">-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--        <div class="item item-video2">-->
+<!--          <div class="columns">-->
+<!--            <div class="column">-->
+<!--              <video poster="" id="reg4" autoplay controls muted height="50%" width="100%">-->
+<!--                &lt;!&ndash; Your video file here &ndash;&gt;-->
+<!--                <source src="static/videos/registration/209_reg.mp4"-->
+<!--                type="video/mp4">-->
+<!--              </video>-->
+<!--            </div>-->
+<!--            <div class="column">-->
+<!--              <img src="static/images/209/target_adjusted.png" alt="Image 4">-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--</section>-->
+<!--&lt;!&ndash; End video carousel &ndash;&gt;-->
+
 
 
 <!--BibTex citation -->
-  <section class="section" id="BibTeX">
-    <div class="container is-max-desktop content">
-      <h2 class="title">BibTeX</h2>
-      <pre><code>BibTex Code Here</code></pre>
-    </div>
-</section>
+<!--  <section class="section" id="BibTeX">-->
+<!--    <div class="container is-max-desktop content">-->
+<!--      <h2 class="title">BibTeX</h2>-->
+<!--      <pre><code>BibTex Code Here</code></pre>-->
+<!--    </div>-->
+<!--</section>-->
 <!--End BibTex citation -->
 
 
@@ -292,7 +583,7 @@
 
           <p>
             This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
-            You are free to borrow the of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+            <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
             Commons Attribution-ShareAlike 4.0 International License</a>.
           </p>
 
@@ -308,5 +599,13 @@
 
     <!-- End of Statcounter Code -->
 
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/index.js"
+  ></script>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/styles.css"
+  />
   </body>
   </html>

@@ -112,6 +112,8 @@ body {
 
 .results-carousel {
   overflow: hidden;
+    width: 65%;
+    margin: 0 auto;
 }
 
 .results-carousel .item {
@@ -124,6 +126,7 @@ body {
 .results-carousel video {
   margin: 0;
 }
+
 
 .slider-pagination .slider-page {
   background: #000000;
