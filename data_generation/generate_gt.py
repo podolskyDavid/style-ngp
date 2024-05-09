@@ -3,7 +3,7 @@ import pyvista as pv
 import numpy as np
 import argparse
 import cv2
-from util import apply_padding
+from utils import apply_padding
 
 
 class GtPlotter:

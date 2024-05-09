@@ -5,7 +5,7 @@ import shutil
 import math
 import numpy as np
 import argparse
-from util import apply_padding
+from utils import apply_padding
 
 class HappyPlotter:
     def __init__(self, num_poses, original_tex_path, tex_size, roi_size, roi_pos, background='black', width=512, height=512):

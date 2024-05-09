@@ -1,13 +1,3 @@
-"""
-Template Nerfstudio Field
-
-Currently this subclasses the NerfactoField. Consider subclassing the base Field.
-"""
-
-
-from nerfstudio.fields.nerfacto_field import NerfactoField  # for subclassing NerfactoField
-from nerfstudio.fields.base_field import Field  # for custom Field
-
 from typing import Dict, Literal, Optional, Tuple
 
 import torch
@@ -27,11 +17,9 @@ from nerfstudio.field_components.field_heads import (
     UncertaintyFieldHead,
 )
 from nerfstudio.field_components.mlp import MLP, MLPWithHashEncoding
-from nerfstudio.field_components.spatial_distortions import SpatialDistortion
 from nerfstudio.fields.base_field import Field, get_normalized_directions
 
-from style_ngp.field_components import VGGFeatureExtractor, SimpleFeatureExtractor, HistogramExtractor
-from style_ngp.util import load_img
+from style_ngp.field_components import HistogramExtractor
 
 import hyperlight as hl
 

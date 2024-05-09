@@ -26,52 +26,52 @@ class StyleNGPPipelineConfig(DynamicBatchPipelineConfig):
     _target: Type = field(default_factory=lambda: StyleNGPPipeline)
     """target class to instantiate"""
 
-    base_data_dir = "/home/maximilian_fehrentz/Documents/MICCAI/207/data/datasets"
-    test_style_dir = "/home/maximilian_fehrentz/Documents/MICCAI/styles"
-    style_dir = "/home/maximilian_fehrentz/Documents/MICCAI/styles"
+    base_data_dir = "./data/datasets"
+    test_style_dir = "./data/textures"
+    style_dir = "./data/textures"
 
     # TODO: manually switching between train and test; fix that and automatically set based on ns-train or ns-viewer
 
     train_data_dirs = [
-        # "207_065_cat5_2",
-        # "207_089_cat5_2",
-        "207_101_cat5_2",
-        "207_103_cat5_2",
-        # "207_105_cat5_2",
-        "207_109_cat5_2",
-        "207_110_cat5_2",
-        "207_111_cat5_2",
-        "207_112_cat5_2",
-        "207_114_cat5_2",
-        "207_117_cat5_2",
-        "207_201_cat5_2",
-        "207_202_cat5_2",
-        "207_205_cat5_2",
-        # "207_207_cat5_2",
-        # "207_209_cat5_2",
+        "0_065_cat5_2.0",
+        "0_089_cat5_2.0",
+        "0_101_cat5_2.0",
+        "0_103_cat5_2.0",
+        "0_105_cat5_2.0",
+        "0_109_cat5_2.0",
+        "0_110_cat5_2.0",
+        "0_111_cat5_2.0",
+        "0_112_cat5_2.0",
+        "0_114_cat5_2.0",
+        "0_117_cat5_2.0",
+        "0_201_cat5_2.0",
+        "0_202_cat5_2.0",
+        "0_205_cat5_2.0",
+        # "0_207_cat5_2.0",
+        "0_209_cat5_2.0",
     ]
 
     train_style_names = [
-        # "case065.png",
-        # "case089_crop2.png",
-        "case101_crop1.png",
-        "case103_crop1.png",
-        # "case105_crop1.png",
-        "case109_crop1.png",
-        "case110_crop1.png",
-        "case111_crop1.png",
-        "case112_crop1.png",
-        "case114_crop1.png",
-        "case117_crop1.png",
-        "case201_crop1.png",
-        "case202_crop1.png",
-        "case205.png",
-        # "case207_crop1.png",
-        # "case209_crop1.png",
+        "0_065_cat5_2.0.png",
+        "0_089_cat5_2.0.png",
+        "0_101_cat5_2.0.png",
+        "0_103_cat5_2.0.png",
+        "0_105_cat5_2.0.png",
+        "0_109_cat5_2.0.png",
+        "0_110_cat5_2.0.png",
+        "0_111_cat5_2.0.png",
+        "0_112_cat5_2.0.png",
+        "0_114_cat5_2.0.png",
+        "0_117_cat5_2.0.png",
+        "0_201_cat5_2.0.png",
+        "0_202_cat5_2.0.png",
+        "0_205_cat5_2.0.png",
+        # "0_207_cat5_2.0.png",
+        "0_209_cat5_2.0.png",
     ]
 
     test_style_names = [
-        "case065.png",
+        "0_207_cat5_2.0.png",
     ]
 
     def get_train_datasets(self):
@@ -101,7 +101,7 @@ class StyleNGPPipeline(DynamicBatchPipeline):
         super().__init__(config, device, test_mode, world_size, local_rank, grad_scaler)
 
         # TODO: remove, make this dependent somehow on whether ns-train or ns-viewer/ns-render is used
-        self.train_styles = False
+        self.train_styles = True
 
         if self.train_styles:
             self.datasets = self.config.get_train_datasets()
