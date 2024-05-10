@@ -67,9 +67,13 @@ cp -r rendered_dataset/test/rgb/* rendered_dataset/images && rm -r rendered_data
 ```bash
 python data_generation/nerf_coords_transform.py --transforms_file data/datasets/0_207_cat5_2.0/transforms.json
 mv data/datasets/0_207_cat5_2.0/transforms_ngp.json rendered_dataset/transforms.json
+``` 
+3. Get some dependencies that Parallel Inversion requires.
+```bash
+git submodule update --init --recursive
 ```
-3. Setup another conda environment as described in the Parallel Inversion submodule (see their Readme).
-4. Navigate to the scripts folder in the submodule and run Parallel Inversion. This will train a new model based on the dataset and then register the NeRF to the intraoperative image. Note that I already provided the json file with a single target with the pose taken from the rerendered dataset and its transforms that you create in step 1 and step 2.
+4. Setup another conda environment as described in the Parallel Inversion submodule (see their Readme). Do not forget to go through the pain of also completing the build, otherwise you will not have modules that the python scripts require (e.g. pyngp). In our case, that required lots of experimenting with cmake, setting for example -DOPENGL_opengl_LIBRARY explicity etc. Also, we had to deactivate the conda environment temporarily for the build so that conda packages do not clash with your system ones.
+5. Navigate to the scripts folder in the submodule and run Parallel Inversion. This will train a new model based on the dataset and then register the NeRF to the intraoperative image. Note that I already provided the json file with a single target with the pose taken from the rerendered dataset and its transforms that you create in step 1 and step 2.
 ```bash
 python run_pose_refinement.py --config config/example/example.yaml --targets_json_path ../../data/example_registration.json --render_aabb_scale 32
 ```
