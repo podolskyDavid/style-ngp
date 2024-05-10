@@ -1,0 +1,3 @@
+[submodule "ParallelInversion"]
+	path = ParallelInversion
+	url = https://github.com/maxfehrentz/ParallelInversion.git
