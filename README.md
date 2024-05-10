@@ -68,9 +68,10 @@ cp -r rendered_dataset/test/rgb/* rendered_dataset/images && rm -r rendered_data
 python data_generation/nerf_coords_transform.py --transforms_file data/datasets/0_207_cat5_2.0/transforms.json
 mv data/datasets/0_207_cat5_2.0/transforms_ngp.json rendered_dataset/transforms.json
 ```
-3. Run Parallel Inversion. This will train a new model based on the dataset and then register the NeRF to the intraoperative image. Check the `...` for the config, `scenes.py` for the definition of the dataset, and `run_pose_refinement.py` for what Parallel Inversion actually does.
+3. Setup another conda environment as described in the Parallel Inversion submodule (see their Readme).
+4. Navigate to the scripts folder in the submodule and run Parallel Inversion. This will train a new model based on the dataset and then register the NeRF to the intraoperative image. Note that I already provided the json file with a single target with the pose taken from the rerendered dataset and its transforms that you create in step 1 and step 2.
 ```bash
-python run_pose_refinement.py --config config/exp/<name of case yml file> --render_aabb_scale 32
+python run_pose_refinement.py --config config/example/example.yaml --targets_json_path ../../data/example_registration.json --render_aabb_scale 32
 ```
 
 # Detailed Overview (Optional)
